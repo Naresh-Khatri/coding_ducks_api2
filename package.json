@@ -1,0 +1,30 @@
+{
+  "name": "coding_ducks_backend",
+  "version": "1.0.0",
+  "description": "Backend for Coding Ducks",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "4.3.1",
+    "axios": "^0.27.2",
+    "compile-code": "^1.1.1",
+    "compile-run": "^2.3.4",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.1",
+    "express": "^4.17.1",
+    "firebase-admin": "^10.2.0",
+    "morgan": "^1.10.0",
+    "pg": "^8.7.3",
+    "ts-node": "^10.9.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.12",
+    "@types/morgan": "^1.9.3",
+    "prisma": "4.3.1",
+    "typescript": "^4.8.3"
+  }
+}
