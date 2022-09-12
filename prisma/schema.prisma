@@ -37,20 +37,20 @@ model User {
   fullname     String    @db.VarChar(100)
   email        String    @unique @db.VarChar(100)
   roll         String?   @db.VarChar(12)
-  googleUID   String    @unique @db.VarChar(30)
-  photoURL    String    @db.VarChar(255)
+  googleUID    String    @unique @db.VarChar(30)
+  photoURL     String    @db.VarChar(255)
   registeredAt DateTime? @default(now()) @db.Timestamp(6)
   lastLoginAt  DateTime? @db.Timestamp(6)
   username     String?   @unique @db.VarChar(30)
-  files        Files[]
+  files        File[]
 }
 
-model Files {
+model File {
   id           Int       @id @default(autoincrement())
   user         User      @relation(fields: [userId], references: [id])
   userId       Int
   fileName     String
-  content      String
+  content      String    @default("")
   lang         String
   lastModified DateTime? @db.Timestamp(6)
 }
