@@ -4,6 +4,7 @@ import morgan from "morgan";
 import cors from "cors";
 
 import usersRoute from "./routes/user";
+import filesRoute from "./routes/files";
 
 const PORT = process.env.PORT || 3333;
 
@@ -25,6 +26,7 @@ app.use(cors({ origin: true, credentials: true }));
 
 // app.use("/", mainRoute);
 app.use("/users", usersRoute);
+app.use("/files", filesRoute);
 // app.use("/problems", problemsRoute);
 // app.use("/results", resultsRoute);
 
