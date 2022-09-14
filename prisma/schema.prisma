@@ -50,7 +50,7 @@ model File {
   user         User      @relation(fields: [userId], references: [id])
   userId       Int
   fileName     String
-  content      String    @default("")
+  code         String    @default("")
   lang         String
   lastModified DateTime? @db.Timestamp(6)
 }
