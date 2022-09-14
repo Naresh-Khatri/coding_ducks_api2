@@ -9,7 +9,11 @@ export const getUserFiles = async (req: Request, res: Response) => {
         const files = await prisma.file.findMany({
             where: {
                 userId: Number(userID)
-            }
+            },
+            orderBy: {
+                fileName: 'asc'
+            },
+
         })
         console.log(files)
         res.json(files)
