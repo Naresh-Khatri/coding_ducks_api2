@@ -2,7 +2,21 @@ import { Request, Response } from 'express'
 import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
+const getPlaceholderText = (lang: String) => {
+    switch (lang) {
+        case 'py':
+            return 'print("Hi mom!")'
+        case 'js':
+            return 'console.log("Hi mom!")'
+        case 'java':
+            return 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hi mom!");\n    }\n}'
+        case 'c':
+            return '#include <stdio.h>\nint main() {\n    printf("Hi mom!");\n    return 0;\n}'
+        case 'cpp':
+            return '#include <iostream>\nint main() {\n    std::cout << "Hi mom!";\n    return 0;\n}'
 
+    }
+}
 export const getUserFiles = async (req: Request, res: Response) => {
     const { userID } = req.params;
     try {
@@ -15,7 +29,6 @@ export const getUserFiles = async (req: Request, res: Response) => {
             },
 
         })
-        console.log(files)
         res.json(files)
 
     } catch (err) {
@@ -29,6 +42,7 @@ export const createUserFile = async (req: Request, res: Response) => {
         const createdFile = await prisma.file.create({
             data: {
                 ...req.body,
+                code: getPlaceholderText(req.body.lang)
             }
         })
         res.status(201).json(createdFile)
