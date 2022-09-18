@@ -5,6 +5,7 @@ import cors from "cors";
 
 import usersRoute from "./routes/user";
 import filesRoute from "./routes/files";
+import codeRoute from './routes/runCode'
 
 const PORT = process.env.PORT || 3333;
 
@@ -19,16 +20,14 @@ app.use((req: Request, res: Response, next: any) => {
         "Origin, Content-Type, X-Auth-Token"
     );
     next();
-}); 
+});
 app.use(express.json());
 app.use(morgan("dev"));
 app.use(cors({ origin: true, credentials: true }));
 
-// app.use("/", mainRoute);
 app.use("/users", usersRoute);
 app.use("/files", filesRoute);
-// app.use("/problems", problemsRoute);
-// app.use("/results", resultsRoute);
+app.use('/runCode', codeRoute)
 
 
 app.listen(PORT, () => {
