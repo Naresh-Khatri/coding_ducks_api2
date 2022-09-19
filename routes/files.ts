@@ -7,7 +7,7 @@ const router = Router()
 router.get('/all', filesController.getAllFiles)
 router.get('/:userID', filesController.getUserFiles)
 router.post('/', filesController.createUserFile)
-router.put('/:id', filesController.updateUserFile)
+router.patch('/:id', filesController.updateUserFile)
 router.delete('/:id', filesController.deleteUserFile)
 
 export default router
