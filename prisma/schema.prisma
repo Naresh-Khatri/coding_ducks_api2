@@ -36,13 +36,17 @@ model User {
   id           Int       @id @default(autoincrement())
   fullname     String    @db.VarChar(100)
   email        String    @unique @db.VarChar(100)
-  roll         String?   @db.VarChar(12)
+  roll         String    @unique @db.VarChar(12)
   googleUID    String    @unique @db.VarChar(30)
   photoURL     String    @db.VarChar(255)
   registeredAt DateTime? @default(now()) @db.Timestamp(6)
   lastLoginAt  DateTime? @db.Timestamp(6)
   username     String?   @unique @db.VarChar(30)
   files        File[]
+  isAdmin      Boolean   @default(false)
+
+  Exam   Exam? @relation(fields: [examId], references: [id])
+  examId Int?
 }
 
 model File {
@@ -53,4 +57,64 @@ model File {
   code         String    @default("")
   lang         String
   lastModified DateTime? @db.Timestamp(6)
+}
+
+model Exam {
+  id           Int       @id @default(autoincrement())
+  title        String
+  description  String
+  coverImg     String
+  startTime    DateTime? @db.Timestamp(6)
+  endTime      DateTime? @db.Timestamp(6)
+  duration     Int?
+  marks        Float?
+  // userId       Int
+  // User         User      @relation(fields: [userId], references: [id])
+  problems     Problem[]
+  participants User[]
+}
+
+model Problem {
+  id            Int          @id @default(autoincrement())
+  name          String
+  description   String
+  difficulty    Int
+  tags          String
+  input         String
+  output        String
+  sample_input  String
+  sample_output String
+  constraints   String
+  marks         Float
+  submissions   Submission[]
+
+  exam        Exam       @relation(fields: [examId], references: [id])
+  examId      Int
+  TestCases   TestCases? @relation(fields: [testCasesId], references: [id])
+  testCasesId Int?
+}
+
+model TestCases {
+  id         Int       @id @default(autoincrement())
+  problem_id Int
+  input      String
+  output     String
+  marks      Float
+  Problem    Problem[]
+}
+
+model Submission {
+  id           Int    @id @default(autoincrement())
+  user_id      Int
+  problem_id   Int
+  code         String
+  lang         String @db.VarChar(10)
+  total_tests  Int
+  tests_passed Int
+  tests        Json   @db.Json
+  marks        Float
+
+  timestamp DateTime? @default(now()) @db.Timestamp(6)
+  Problem   Problem?  @relation(fields: [problemId], references: [id])
+  problemId Int?
 }
