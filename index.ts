@@ -6,6 +6,8 @@ import cors from "cors";
 import usersRoute from "./routes/user";
 import filesRoute from "./routes/files";
 import codeRoute from './routes/runCode'
+import examRoute from './routes/exams'
+import problemsRoute from './routes/problems'
 
 const PORT = process.env.PORT || 3333;
 
@@ -28,6 +30,8 @@ app.use(cors({ origin: true, credentials: true }));
 app.use("/users", usersRoute);
 app.use("/files", filesRoute);
 app.use('/runCode', codeRoute)
+app.use('/exams', examRoute)
+app.use('/problems', problemsRoute)
 
 
 app.listen(PORT, () => {
