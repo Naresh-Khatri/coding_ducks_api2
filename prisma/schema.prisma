@@ -45,6 +45,9 @@ model User {
   files        File[]
   isAdmin      Boolean   @default(false)
 
+  followersIDs Int[]
+  followingIDs Int[]
+
   Exam   Exam? @relation(fields: [examId], references: [id])
   examId Int?
 }
@@ -68,6 +71,7 @@ model Exam {
   endTime      DateTime? @db.Timestamp(6)
   duration     Int?
   marks        Float?
+  slug         String    @unique
   // userId       Int
   // User         User      @relation(fields: [userId], references: [id])
   problems     Problem[]
@@ -75,33 +79,28 @@ model Exam {
 }
 
 model Problem {
-  id            Int          @id @default(autoincrement())
-  name          String
-  description   String
-  difficulty    Int
-  tags          String
-  input         String
-  output        String
-  sample_input  String
-  sample_output String
-  constraints   String
-  marks         Float
-  submissions   Submission[]
-
-  exam        Exam       @relation(fields: [examId], references: [id])
+  id          Int          @id @default(autoincrement())
+  order       Int          @default(1)
+  title       String
+  description String
+  difficulty  String
+  tags        String[]
+  submissions Submission[]
+  testCases   Json         @db.Json
+  exam        Exam         @relation(fields: [examId], references: [id])
   examId      Int
-  TestCases   TestCases? @relation(fields: [testCasesId], references: [id])
-  testCasesId Int?
+  // TestCases   TestCases? @relation(fields: [testCasesId], references: [id])
+  // testCasesId Int?
 }
 
-model TestCases {
-  id         Int       @id @default(autoincrement())
-  problem_id Int
-  input      String
-  output     String
-  marks      Float
-  Problem    Problem[]
-}
+// model TestCases {
+//   id         Int       @id @default(autoincrement())
+//   problem_id Int
+//   input      String
+//   output     String
+//   marks      Float
+//   Problem    Problem[]
+// }
 
 model Submission {
   id           Int    @id @default(autoincrement())
