@@ -1,14 +1,19 @@
 import { Router } from 'express'
+import fileUpload from "express-fileupload";
 import * as examsController from '../controllers/exams'
 
+import { checkIfAuthenticated } from '../middlewares/auth-middleware';
+
 const router = Router()
+router.use(fileUpload());
 
 //TODO: add auth
 router.get('/', examsController.getAllExams)
-router.get('/:examId', examsController.getExam)
-router.post('/', examsController.createExam)
-router.patch('/:examId', examsController.updateExam)
-router.delete('/:examId', examsController.deleteExam)
+router.get('/slug/:slug', examsController.getExamUsingSlug)
+router.get('/id/:examId', examsController.getExamUsingId)
+router.post('/', [checkIfAuthenticated], examsController.createExam)
+router.patch('/:examId', [checkIfAuthenticated], examsController.updateExam)
+router.delete('/:examId', [checkIfAuthenticated], examsController.deleteExam)
 
 export default router
 
