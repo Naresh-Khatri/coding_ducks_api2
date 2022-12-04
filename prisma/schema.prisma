@@ -45,12 +45,19 @@ model User {
   files        File[]
   isAdmin      Boolean   @default(false)
 
-  followersIDs Int[]
-  followingIDs Int[]
+  exams Exam[]
 
-  Exam   Exam? @relation(fields: [examId], references: [id])
-  examId Int?
+  followedBy User[]  @relation("UserFollows")
+  following  User[]  @relation("UserFollows")
 }
+
+// model Follows {
+//   follower    User  @relation("follower", fields: [followerId], references: [id])
+//   followerId  Int
+//   following   User  @relation("following", fields: [followingId], references: [id])
+//   followingId Int
+//   @@id([followerId, followingId])
+// }
 
 model File {
   id           Int       @id @default(autoincrement())
