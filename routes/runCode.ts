@@ -9,7 +9,7 @@ const router = Router();
 router.post('/', async (req: Request, res: Response) => {
     const { code, lang, problemId } = req.body;
     console.log(req.body)
-    const result = await  evaluateResult(problemId, code, lang)
+    const result = await evaluateResult(problemId, code, lang)
 
     res.json(result)
 });
@@ -31,7 +31,7 @@ const evaluateResult = async (problemId: Number, code: string, lang: string) => 
             const result = await runCode(code, lang, input.replaceAll('\\n', '\n'))
 
             const { stderr } = result
-            if (stderr) return { message: stderr }
+            if (stderr) return { errorOccurred: true, errorMessage: stderr }
             return {
                 input,
                 output,
@@ -41,7 +41,7 @@ const evaluateResult = async (problemId: Number, code: string, lang: string) => 
             }
         }))
         const isCorrect = results.every(result => result.isCorrect)
-        const passedCount = results.reduce((acc, res)=>acc + (res.isCorrect?1:0),0)
+        const passedCount = results.reduce((acc, res) => acc + (res.isCorrect ? 1 : 0), 0)
         const totalCount = results.length
         return {
             results,
@@ -57,7 +57,7 @@ const evaluateResult = async (problemId: Number, code: string, lang: string) => 
 
 const verifyOutput = (expectedOutput: string, actualOutput: string) => {
     // console.log(expectedOutput.trim().replaceAll(/\t|\n|\r| /g,""), actualOutput.trim().replaceAll(/\t|\n|\r| /g,""))
-    return expectedOutput.trim().replaceAll(/\t|\n|\r| /g,"") === actualOutput.trim().replaceAll(/\t|\n|\r| /g,"")
+    return expectedOutput.trim().replaceAll(/\t|\n|\r| /g, "") === actualOutput.trim().replaceAll(/\t|\n|\r| /g, "")
 }
 
 const runCode = async (code: string, lang: string, input: string) => {
