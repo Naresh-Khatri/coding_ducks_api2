@@ -24,7 +24,44 @@ export const createUser = async (req: Request, res: Response) => {
 }
 export const getUser = async (req: Request, res: Response) => {
     try {
-        const user = await prisma.user.findFirst({ where: { googleUID: req.params.id } })
+        const user = await prisma.user.findFirst({
+            where: { googleUID: req.params.gid },
+            include: {
+                following: {
+                    select: {
+                        id: true, fullname: true, username: true, photoURL: true, registeredAt: true
+                    }
+                },
+                followedBy: {
+                    select: {
+                        id: true, fullname: true, username: true, photoURL: true, registeredAt: true
+                    }
+                }
+            }
+        })
+        res.json(user || [])
+    } catch (err) {
+        res.status(404).json({ message: 'somethings wrong' })
+        console.log(err)
+    }
+}
+//TODO: this function need some optimization
+export const getUserUsingUsername = async (req: Request, res: Response) => {
+    try {
+        const user = await prisma.user.findFirst({
+            where: { username: req.params.username },
+            include: {
+                followedBy: {
+                    select: {
+                        id: true, fullname: true, username: true, photoURL: true, registeredAt: true
+                    }
+                }, following: {
+                    select: {
+                        id: true, fullname: true, username: true, photoURL: true, registeredAt: true
+                    }
+                }
+            }
+        })
         res.json(user || [])
     } catch (err) {
         res.status(404).json({ message: 'somethings wrong' })
@@ -46,4 +83,68 @@ export const checkUsername = async (req: Request, res: Response) => {
     const user = await prisma.user.findFirst({ where: { username: username } })
     res.json({ available: !!!user })
 
+}
+
+
+export const followUser = async (req: Request, res: Response) => {
+    try {
+        const { fromUser, toUser } = req.body
+        await prisma.user.update({
+            where: { id: fromUser },
+            data: {
+                following: {
+                    connect: {
+                        id: toUser
+                    }
+                }
+            }
+        })
+        await prisma.user.update({
+            where: { id: toUser },
+            data: {
+                followedBy: {
+                    connect: {
+                        id: fromUser
+                    }
+                }
+            }
+        })
+
+        res.status(200).json({ message: 'success' })
+
+    } catch (err) {
+        res.status(404).json({ message: 'somethings wrong' })
+        console.log(err)
+    }
+}
+
+export const unfollowUser = async (req: Request, res: Response) => {
+    try {
+        const { fromUser, toUser } = req.body
+        await prisma.user.update({
+            where: { id: fromUser },
+            data: {
+                following: {
+                    disconnect: {
+                        id: toUser
+                    }
+                }
+            }
+        })
+        await prisma.user.update({
+            where: { id: toUser },
+            data: {
+                followedBy: {
+                    disconnect: {
+                        id: fromUser
+                    }
+                }
+            }
+        })
+        res.status(200).json({ message: 'success' })
+
+    } catch (err) {
+        res.status(404).json({ message: 'somethings wrong' })
+        console.log(err)
+    }
 }
