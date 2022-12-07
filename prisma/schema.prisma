@@ -120,9 +120,10 @@ model Submission {
 }
 
 model Exercise {
-  id        Int      @id @default(autoincrement())
-  createdBy Int
-  createdOn DateTime @default(now()) @db.Timestamp(6)
+  id          Int      @id @default(autoincrement())
+  createdBy   Int
+  createdOn   DateTime @default(now()) @db.Timestamp(6)
+  description String
 
   cover_img   String
   sections    Json[]
