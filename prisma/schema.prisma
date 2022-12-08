@@ -43,21 +43,14 @@ model User {
   lastLoginAt  DateTime? @db.Timestamp(6)
   username     String?   @unique @db.VarChar(30)
   files        File[]
+  bio          String?
   isAdmin      Boolean   @default(false)
 
   exams Exam[]
 
-  followedBy User[]  @relation("UserFollows")
-  following  User[]  @relation("UserFollows")
+  followedBy         User[]               @relation("UserFollows")
+  following          User[]               @relation("UserFollows")
 }
-
-// model Follows {
-//   follower    User  @relation("follower", fields: [followerId], references: [id])
-//   followerId  Int
-//   following   User  @relation("following", fields: [followingId], references: [id])
-//   followingId Int
-//   @@id([followerId, followingId])
-// }
 
 model File {
   id           Int       @id @default(autoincrement())
