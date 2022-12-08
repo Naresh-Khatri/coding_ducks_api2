@@ -50,6 +50,7 @@ model User {
 
   followedBy         User[]               @relation("UserFollows")
   following          User[]               @relation("UserFollows")
+  ExerciseSubmission ExerciseSubmission[]
 }
 
 model File {
@@ -116,4 +117,23 @@ model Submission {
   timestamp DateTime? @default(now()) @db.Timestamp(6)
   Problem   Problem?  @relation(fields: [problemId], references: [id])
   problemId Int?
+}
+
+model Exercise {
+  id        Int      @id @default(autoincrement())
+  createdBy Int
+  createdOn DateTime @default(now()) @db.Timestamp(6)
+
+  cover_img   String
+  sections    Json[]
+  answers     String[]
+  submissions ExerciseSubmission[]
+}
+
+model ExerciseSubmission {
+  id         Int      @id @default(autoincrement())
+  exerciseID Int
+  exercise   Exercise @relation(fields: [exerciseID], references: [id])
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id])
 }
