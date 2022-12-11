@@ -11,6 +11,7 @@ router.use(fileUpload());
 router.get('/', examsController.getAllExams)
 router.get('/slug/:slug', examsController.getExamUsingSlug)
 router.get('/id/:examId', examsController.getExamUsingId)
+router.get('/getProgress/:examId', [checkIfAuthenticated], examsController.getUserProgress)
 router.post('/', [checkIfAuthenticated], examsController.createExam)
 router.patch('/:examId', [checkIfAuthenticated], examsController.updateExam)
 router.delete('/:examId', [checkIfAuthenticated], examsController.deleteExam)
