@@ -31,6 +31,35 @@ export const getExamUsingId = async (req: Request, res: Response) => {
   }
 }
 
+export const getUserProgress = async (req: Request, res: Response) => {
+  try {
+
+    const submissions = await prisma.submission.findMany({
+      where: {
+        user_id: +req.user.user_id,
+        examId: +req.params.examId,
+      },
+      orderBy: {
+        problemId: 'asc',
+      }
+    })
+    const totalMarks = await prisma.exam.findFirst({
+      where: {
+        id: +req.params.examId,
+      },
+      select: {
+        marks: true
+      }
+    })
+
+    res.status(200).json({ submissions, totalMarks: totalMarks?.marks })
+  } catch (err: any) {
+    console.log(err)
+    res.status(404).json({ message: 'somethings wrong' })
+  }
+
+}
+
 export const getExamUsingSlug = async (req: Request, res: Response) => {
   try {
     const exam = await prisma.exam.findUnique({
