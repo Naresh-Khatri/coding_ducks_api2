@@ -64,19 +64,20 @@ model File {
 }
 
 model Exam {
-  id           Int       @id @default(autoincrement())
+  id           Int          @id @default(autoincrement())
   title        String
   description  String
   coverImg     String
-  startTime    DateTime? @db.Timestamp(6)
-  endTime      DateTime? @db.Timestamp(6)
+  startTime    DateTime?    @db.Timestamp(6)
+  endTime      DateTime?    @db.Timestamp(6)
   duration     Int?
   marks        Float?
-  slug         String    @unique
+  slug         String       @unique
   // userId       Int
   // User         User      @relation(fields: [userId], references: [id])
   problems     Problem[]
   participants User[]
+  Submission   Submission[]
 }
 
 model Problem {
@@ -106,7 +107,6 @@ model Problem {
 model Submission {
   id           Int    @id @default(autoincrement())
   user_id      Int
-  problem_id   Int
   code         String
   lang         String @db.VarChar(10)
   total_tests  Int
@@ -115,8 +115,11 @@ model Submission {
   marks        Float
 
   timestamp DateTime? @default(now()) @db.Timestamp(6)
-  Problem   Problem?  @relation(fields: [problemId], references: [id])
-  problemId Int?
+
+  Exam      Exam    @relation(fields: [examId], references: [id])
+  examId    Int     @default(2)
+  Problem   Problem @relation(fields: [problemId], references: [id])
+  problemId Int
 }
 
 model Exercise {
