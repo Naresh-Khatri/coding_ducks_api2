@@ -1,8 +1,10 @@
-// import { NextFunction, Response } from "express";
+import { PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient()
+import { NextFunction, Response, Request } from "express";
 // import { RequestWithUserAndFile } from "../custom_types/request.js";
 import admin from "../firebase/firebase_service.js";
 
-const getAuthToken = (req) => {
+const getAuthToken = (req: Request) => {
   if (
     req.headers.authorization &&
     req.headers.authorization.split(" ")[0] === "Bearer"
@@ -13,17 +15,22 @@ const getAuthToken = (req) => {
   }
 };
 
-export const checkIfAuthenticated = async (req, res, next) => {
+export const checkIfAuthenticated = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authToken = getAuthToken(req);
     // console.log(req.headers.authorization);
     if (!authToken) {
       return res.status(401).send({ message: "unauthorized", code: 401 });
     }
-    const decodedToken = await admin.auth().verifyIdToken(authToken);
-    req.user = decodedToken;
+    const decodedUser = await admin.auth().verifyIdToken(authToken);
+    const userInDB = await prisma.user.findUnique({
+      where: {
+        googleUID: decodedUser.user_id
+      }
+    })
+    req.user = { ...decodedUser, user_id: userInDB?.id };
     next();
-  } catch (err) {
+  } catch (err: any) {
     // console.error(err);
     console.error(err.code);
     if (err.code === "auth/argument-error") {
