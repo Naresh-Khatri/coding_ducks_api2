@@ -4,7 +4,20 @@ const prisma = new PrismaClient()
 
 export const getAllProblems = async (req: Request, res: Response) => {
   try {
-    const problemsList = await prisma.problem.findMany()
+    const problemsList = await prisma.problem.findMany({
+      orderBy: {
+        order: 'asc'
+      },
+      include: {
+        exam: {
+          select: {
+            slug: true,
+            title: true
+          }
+        }
+      }
+
+    })
     res.status(200).json(problemsList)
 
   } catch (err) {
