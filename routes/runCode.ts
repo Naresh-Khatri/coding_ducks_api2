@@ -31,51 +31,48 @@ router.post('/', [checkIfAuthenticated], async (req: Request, res: Response) => 
 });
 
 const evaluateResult = async (problemId: Number, code: string, lang: string) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const problem = await prisma.problem.findUnique({
+                where: { id: +problemId },
+                // select: { testCases: true }
+            })
+            if (!problem?.testCases) return reject({ message: 'problem not found' })
+            //idk why but we need to cast it to an Array
+            const testCases = problem.testCases as Array<{ input: string, output: string }>
+            const results = await Promise.all(testCases.map(async (testCase) => {
+                const { input, output } = testCase
+                const result = await runCode(code, lang, input.replaceAll('\\n', '\n'))
 
-    try {
-        const problem = await prisma.problem.findUnique({
-            where: { id: +problemId },
-            select: {
-                testCases: true
-            }
-        })
-        if (!problem?.testCases) return { message: 'problem not found' }
-        //idk why but we need to cast it to an Array
-        const testCases = problem.testCases as Array<{ input: string, output: string }>
-        const results = await Promise.all(testCases.map(async (testCase) => {
-            const { input, output } = testCase
-            const result = await runCode(code, lang, input.replaceAll('\\n', '\n'))
+                const { stderr } = result
+                if (stderr) return { errorOccurred: true, errorMessage: stderr }
+                return {
+                    input,
+                    output,
+                    actualOutput: result.stdout,
+                    result,
+                    isCorrect: verifyOutput(output, result.stdout)
+                }
+            }))
+            const isCorrect = results.every(result => result.isCorrect)
+            const passedCount = results.reduce((acc, res) => acc + (res.isCorrect ? 1 : 0), 0)
+            const totalCount = results.length
 
-            const { stderr } = result
-            if (stderr) return { errorOccurred: true, errorMessage: stderr }
-            return {
-                input,
-                output,
-                actualOutput: result.stdout,
-                result,
-                isCorrect: verifyOutput(output, result.stdout)
-            }
-        }))
-        const isCorrect = results.every(result => result.isCorrect)
-        const passedCount = results.reduce((acc, res) => acc + (res.isCorrect ? 1 : 0), 0)
-        const totalCount = results.length
+            resolve({
+                results,
+                passedCount,
+                totalCount,
+                isCorrect
+            })
 
-        // save submission in db
-        return {
-            results,
-            passedCount,
-            totalCount,
-            isCorrect
+        } catch (err) {
+            console.log(err)
+            reject({ message: 'somethings wrong' })
         }
-
-    } catch (err) {
-        console.log(err)
-        return { message: 'somethings wrong' }
-    }
+    })
 }
 const saveInDB = async (result: Result, req: Request) => {
     return new Promise<void>(async (resolve, reject) => {
-        // console.log(req.user)
         const submission = await prisma.submission.create({
             data: {
                 code: req.body.code,
@@ -100,7 +97,7 @@ const verifyOutput = (expectedOutput: string, actualOutput: string) => {
 }
 
 const runCode = async (code: string, lang: string, input: string) => {
-    console.log("input", input)
+    // console.log("input", input)
     if (lang === 'c')
         return c.runSource(code, { stdin: input })
     if (lang === 'cpp')
