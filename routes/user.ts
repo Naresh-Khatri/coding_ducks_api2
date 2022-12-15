@@ -6,6 +6,7 @@ const router = Router();
 
 router.get('/', userController.getUsers);
 router.get('/:gid', userController.getUser);
+router.get('/progress/:userId', userController.getUserProgress);
 router.get('/username/:username', userController.getUserUsingUsername);
 router.patch('/', userController.updateUser);
 router.post('/checkUsername', userController.checkUsername);
