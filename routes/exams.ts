@@ -8,7 +8,7 @@ const router = Router()
 router.use(fileUpload());
 
 //TODO: add auth
-router.get('/', examsController.getAllExams)
+router.get('/', [checkIfAuthenticated], examsController.getAllExams)
 router.get('/slug/:slug', examsController.getExamUsingSlug)
 router.get('/id/:examId', examsController.getExamUsingId)
 router.get('/getProgress/:examId', [checkIfAuthenticated], examsController.getUserProgress)
