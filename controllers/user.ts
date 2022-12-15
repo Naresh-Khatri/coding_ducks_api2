@@ -4,8 +4,14 @@ import { Prisma, PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 export const getUsers = async (req: Request, res: Response) => {
-    const users = await prisma.user.findMany({})
-    res.json(users)
+    try {
+        const users = await prisma.user.findMany()
+
+        res.json(users)
+    } catch (err) {
+        res.status(404).json({ message: 'somethings wrong' })
+
+    }
 }
 export const createUser = async (req: Request, res: Response) => {
     try {
@@ -143,6 +149,45 @@ export const unfollowUser = async (req: Request, res: Response) => {
         })
         res.status(200).json({ message: 'success' })
 
+    } catch (err) {
+        res.status(404).json({ message: 'somethings wrong' })
+        console.log(err)
+    }
+}
+
+export const getUserProgress = async (req: Request, res: Response) => {
+    try {
+        const submissions = await prisma.submission.findMany({
+            distinct: 'problemId',
+            orderBy: {
+                marks: 'asc',
+            },
+            where: {
+                user_id: +req.params.userId,
+            },
+            select: {
+                Exam: {
+                    select: {
+                        id: true,
+                        title: true,
+                        slug: true,
+                    }
+                },
+                timestamp: true,
+                problemId: true,
+                marks: true,
+                lang: true,
+            },
+
+
+        })
+        const newSub = submissions.reduce((acc, sub) => {
+            const examId = sub.Exam.id
+            if (acc[examId] == null) acc[examId] = []
+            acc[examId].push(sub)
+            return acc
+        }, {} as any)
+        res.status(200).json(newSub)
     } catch (err) {
         res.status(404).json({ message: 'somethings wrong' })
         console.log(err)
