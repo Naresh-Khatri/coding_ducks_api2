@@ -6,9 +6,16 @@ const prisma = new PrismaClient()
 
 export const getAllExams = async (req: Request, res: Response) => {
   try {
-    const exams = await prisma.exam.findMany({ orderBy: { id: 'asc' } })
+    let exams;
+    if (req.user?.isAdmin)
+      exams = await prisma.exam.findMany({
+        orderBy: { id: 'asc' },
+      })
+    else
+      exams = await prisma.exam.findMany({
+        orderBy: { id: 'asc' }, where: { active: true }
+      })
     res.status(200).json(exams)
-
   } catch (err) {
     console.log(err)
     res.status(404).json({ message: 'somethings wrong' })
@@ -126,7 +133,7 @@ export const updateExam = async (req: Request, res: Response) => {
         id: +req.params.examId
       },
       data: {
-        ...req.body
+        ...req.body, active: req.body.active === 'true' ? true : false
       }
     })
     res.status(200).json(updatedExam)
