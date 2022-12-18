@@ -76,8 +76,24 @@ export const getUserUsingUsername = async (req: Request, res: Response) => {
 }
 export const updateUser = async (req: Request, res: Response) => {
     try {
-        console.log(req.body)
-        const user = await prisma.user.update({ where: { googleUID: req.body.googleUID }, data: { ...req.body } })
+        await prisma.user.update({
+            where: { id: req.user.user_id }, data: { ...req.body }
+        })
+        const user = await prisma.user.findFirst({
+            where: { id: req.user.user_id },
+            include: {
+                following: {
+                    select: {
+                        id: true, fullname: true, username: true, photoURL: true, registeredAt: true
+                    }
+                },
+                followedBy: {
+                    select: {
+                        id: true, fullname: true, username: true, photoURL: true, registeredAt: true
+                    }
+                }
+            }
+        })
         res.json(user)
     } catch (err) {
         res.status(404).json({ message: 'somethings wrong' })
