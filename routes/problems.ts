@@ -5,7 +5,7 @@ import { checkIfAuthenticated } from '../middlewares/auth-middleware'
 const router = Router()
 
 //TODO: add auth
-router.get('/', problemsController.getAllProblems)
+router.get('/', [checkIfAuthenticated], problemsController.getAllProblems)
 router.get('/examProblems/:examId', problemsController.getExamProblems)
 router.get('/:problemId', [checkIfAuthenticated], problemsController.getProblem)
 router.post('/', [checkIfAuthenticated], problemsController.createProblem)
