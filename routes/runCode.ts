@@ -42,7 +42,11 @@ const evaluateResult = async (problemId: Number, code: string, lang: string) => 
             const testCases = problem.testCases as Array<{ input: string, output: string }>
             const results = await Promise.all(testCases.map(async (testCase) => {
                 const { input, output } = testCase
-                const result = await runCode(code, lang, input.replaceAll('\\n', '\n'))
+                // console.log(input)
+                // console.log(input.replaceAll('\\n', '\n'))
+                // add \n at the end to avoid \r 
+                const result = await runCode(code, lang, input.replaceAll('\\n', '\n') + '\n')
+
 
                 const { stderr } = result
                 if (stderr) return { errorOccurred: true, errorMessage: stderr }
