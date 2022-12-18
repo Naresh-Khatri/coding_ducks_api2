@@ -8,7 +8,7 @@ router.get('/', userController.getUsers);
 router.get('/:gid', userController.getUser);
 router.get('/progress/:userId', userController.getUserProgress);
 router.get('/username/:username', userController.getUserUsingUsername);
-router.patch('/', userController.updateUser);
+router.patch('/', [checkIfAuthenticated], userController.updateUser);
 router.post('/checkUsername', userController.checkUsername);
 router.post('/', userController.createUser);
 router.post('/follow', [checkIfAuthenticated], userController.followUser);
