@@ -55,7 +55,7 @@ export const getUser = async (req: Request, res: Response) => {
 export const getUserUsingUsername = async (req: Request, res: Response) => {
     try {
         const user = await prisma.user.findFirst({
-            where: { username: req.params.username },
+            where: { username: { equals: req.params.username, mode: 'insensitive' } },
             include: {
                 followedBy: {
                     select: {
