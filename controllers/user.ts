@@ -1,6 +1,8 @@
 import { Request, Response } from 'express'
 
 import { Prisma, PrismaClient } from '@prisma/client'
+import fileUpload from 'express-fileupload'
+import imageKit from '../imagekit/config'
 const prisma = new PrismaClient()
 
 export const getUsers = async (req: Request, res: Response) => {
@@ -207,5 +209,34 @@ export const getUserProgress = async (req: Request, res: Response) => {
     } catch (err) {
         res.status(404).json({ message: 'somethings wrong' })
         console.log(err)
+    }
+}
+export const uploadProfilePicture = async (req: Request, res: Response) => {
+    const { user_id } = req.user
+    if (!req.files || Object.keys(req.files).length === 0)
+        return res.status(404).json({ message: 'cover image not uploaded' })
+
+    const newProfilePicture = req.files.newProfilePicture as fileUpload.UploadedFile
+    const fileName = `${user_id}-${Date.now}`
+    try {
+        const result = await imageKit.upload({
+            file: newProfilePicture.data,
+            fileName: fileName,
+            folder: "/coding_ducks/profile_pictures/",
+            extensions: [{ name: "google-auto-tagging", maxTags: 5, minConfidence: 95, },
+            ],
+        });
+        console.log(result)
+        const updatedUser = await prisma.user.update({
+            where: { id: user_id },
+            data: {
+                photoURL: result.url
+            }
+        })
+        res.status(200).json(updatedUser)
+
+    } catch (err) {
+        console.log(err)
+        res.status(404).json({ message: 'somethings wrong' })
     }
 }
