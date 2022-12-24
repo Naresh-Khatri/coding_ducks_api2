@@ -41,7 +41,7 @@ model User {
   photoURL     String    @db.VarChar(255)
   registeredAt DateTime? @default(now()) @db.Timestamp(6)
   lastLoginAt  DateTime? @db.Timestamp(6)
-  username     String   @unique @db.VarChar(30)
+  username     String    @unique @db.VarChar(30)
   files        File[]
   bio          String?
   isAdmin      Boolean   @default(false)
@@ -51,6 +51,7 @@ model User {
   followedBy         User[]               @relation("UserFollows")
   following          User[]               @relation("UserFollows")
   ExerciseSubmission ExerciseSubmission[]
+  Submission         Submission[]
 }
 
 model File {
@@ -122,6 +123,8 @@ model Submission {
   examId    Int     @default(2)
   Problem   Problem @relation(fields: [problemId], references: [id])
   problemId Int
+  userId    Int
+  User      User    @relation(fields: [userId], references: [id])
 }
 
 model Exercise {
