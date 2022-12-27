@@ -109,7 +109,6 @@ model Problem {
 
 model Submission {
   id           Int    @id @default(autoincrement())
-  user_id      Int
   code         String
   lang         String @db.VarChar(10)
   total_tests  Int
