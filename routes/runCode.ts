@@ -42,8 +42,6 @@ const evaluateResult = async (problemId: Number, code: string, lang: string) => 
             const testCases = problem.testCases as Array<{ input: string, output: string }>
             const results = await Promise.all(testCases.map(async (testCase) => {
                 const { input, output } = testCase
-                // console.log(input)
-                // console.log(input.replaceAll('\\n', '\n'))
                 // add \n at the end to avoid \r 
                 const result = await runCode(code, lang, input.replaceAll('\\n', '\n') + '\n')
 
@@ -81,7 +79,7 @@ const saveInDB = async (result: Result, req: Request) => {
             data: {
                 code: req.body.code,
                 lang: req.body.lang,
-                user_id: req.user.user_id,
+                userId: req.user.userId,
                 total_tests: result.totalCount,
                 tests_passed: result.passedCount,
                 marks: result.totalCount === result.passedCount ? 10 : 0,
