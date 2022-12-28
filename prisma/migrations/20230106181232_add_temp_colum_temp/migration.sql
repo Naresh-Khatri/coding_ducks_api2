@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Submission" ADD COLUMN     "test" INTEGER NOT NULL DEFAULT 0,
+ALTER COLUMN "userId" SET DEFAULT 54;
