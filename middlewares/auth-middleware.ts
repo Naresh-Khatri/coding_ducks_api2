@@ -25,7 +25,7 @@ export const checkIfAuthenticated = async (req: Request, res: Response, next: Ne
     const decodedUser = await admin.auth().verifyIdToken(authToken);
     const userInDB = await prisma.user.findUnique({
       where: {
-        googleUID: decodedUser.user_id
+        googleUID: decodedUser.userId
       },
       select: {
         id: true,
@@ -33,7 +33,7 @@ export const checkIfAuthenticated = async (req: Request, res: Response, next: Ne
 
       }
     })
-    req.user = { ...decodedUser, user_id: userInDB?.id, isAdmin: userInDB?.isAdmin };
+    req.user = { ...decodedUser, userId: userInDB?.id, isAdmin: userInDB?.isAdmin };
     next();
   } catch (err: any) {
     // console.error(err);
