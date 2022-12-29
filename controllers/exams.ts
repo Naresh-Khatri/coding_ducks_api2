@@ -43,7 +43,7 @@ export const getUserProgress = async (req: Request, res: Response) => {
 
     const submissions = await prisma.submission.findMany({
       where: {
-        user_id: +req.user.user_id,
+        userId: +req.user.userId,
         examId: +req.params.examId,
       },
       orderBy: {
@@ -64,7 +64,7 @@ export const getUserProgress = async (req: Request, res: Response) => {
     console.log(err)
     res.status(404).json({ message: 'somethings wrong' })
   }
-
+  
 }
 
 export const getExamUsingSlug = async (req: Request, res: Response) => {
