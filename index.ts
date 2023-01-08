@@ -8,6 +8,7 @@ import filesRoute from "./routes/files";
 import codeRoute from './routes/runCode'
 import examRoute from './routes/exams'
 import problemsRoute from './routes/problems'
+import playgroundRoute from './routes/playground'
 
 const PORT = process.env.PORT || 3333;
 
@@ -32,7 +33,7 @@ app.use("/files", filesRoute);
 app.use('/runCode', codeRoute)
 app.use('/exams', examRoute)
 app.use('/problems', problemsRoute)
-
+app.use('/playground', playgroundRoute)
 
 app.listen(PORT, () => {
     console.log(`Server up on http://localhost:${PORT}`);
