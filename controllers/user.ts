@@ -54,6 +54,7 @@ export const getUsers = async (req: Request, res: Response) => {
 
 export const createUser = async (req: Request, res: Response) => {
     try {
+        console.log(req.body)
         const newUser = await prisma.user.create({
             data: {
                 ...req.body
@@ -107,7 +108,9 @@ export const getUserUsingUsername = async (req: Request, res: Response) => {
                 }
             }
         })
-        res.json(user || [])
+        if (!user) return res.status(404).json({ message: 'user not found' })
+
+        res.json(user)
     } catch (err) {
         res.status(404).json({ message: 'somethings wrong' })
         console.log(err)
@@ -212,42 +215,54 @@ export const unfollowUser = async (req: Request, res: Response) => {
 
 export const getUserProgress = async (req: Request, res: Response) => {
     try {
-        const submissions = await prisma.submission.findMany({
-            distinct: 'problemId',
-            orderBy: {
-                marks: 'asc',
-            },
+        const user = await prisma.user.findFirst({
             where: {
-                userId: +req.params.userId,
+                username: {
+                    equals: req.params.username,
+                    mode: 'insensitive'
+                }
             },
-            select: {
-                Exam: {
+            include: {
+                Submission: {
+                    distinct: 'problemId',
+                    orderBy: {
+                        marks: 'asc'
+                    },
                     select: {
-                        id: true,
-                        title: true,
-                        slug: true,
+                        problemId: true,
+                        marks: true,
+                        lang: true,
+                        timestamp: true,
+                        Exam: {
+                            select: {
+                                id: true,
+                                title: true,
+                                slug: true,
+                            }
+                        }
                     }
-                },
-                timestamp: true,
-                problemId: true,
-                marks: true,
-                lang: true,
-            },
+                }
+            }
         })
-        const newSub = submissions.reduce((acc, sub) => {
+        if (!user) return res.status(404).json({ message: 'user not found' })
+        const result: any = await prisma.$queryRaw`SELECT timestamp::date, COUNT(*)::int
+FROM "Submission"
+WHERE "userId" = ${user.id}
+GROUP BY timestamp::date
+ORDER BY timestamp::date ASC;`
+        const dailySubmissions = result.map((sub: any) => {
+            return {
+                date: sub.timestamp.toISOString().split('T')[0],
+                count: sub.count
+            }
+        })
+        const newSub = user?.Submission.reduce((acc, sub) => {
             const examId = sub.Exam.id
             if (acc[examId] == null) acc[examId] = []
             acc[examId].push(sub)
             return acc
         }, {} as any)
-        // const dailySubCounts = await prisma.submission.aggregate({
-        //     where: {
-        //         userId: +req.params.userId,
-        //     },
-
-        // })
-        // console.log(dailySubCounts)
-        res.status(200).json(newSub)
+        res.status(200).json({ dailySubmissions, byExamId: newSub })
     } catch (err) {
         res.status(404).json({ message: 'somethings wrong' })
         console.log(err)
