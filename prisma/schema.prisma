@@ -36,7 +36,7 @@ model User {
   id           Int       @id @default(autoincrement())
   fullname     String    @db.VarChar(100)
   email        String    @unique @db.VarChar(100)
-  roll         String    @unique @db.VarChar(12)
+  roll         String?    @unique @db.VarChar(12)
   googleUID    String    @unique @db.VarChar(30)
   photoURL     String    @db.VarChar(255)
   registeredAt DateTime? @default(now()) @db.Timestamp(6)
