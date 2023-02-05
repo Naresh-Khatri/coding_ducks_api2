@@ -6,7 +6,7 @@ export const getAllProblems = async (req: Request, res: Response) => {
   try {
     const problemsList = await prisma.problem.findMany({
       orderBy: {
-        order: "asc",
+        id: 'desc'
       },
       include: {
         exam: {
