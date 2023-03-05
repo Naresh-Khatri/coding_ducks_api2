@@ -1,11 +1,8 @@
 import { Server, Socket } from "socket.io";
-import { Result } from "compile-run";
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
-import { createClient } from "redis";
 import { runCode } from "../routes/playground";
-// const redisClient = createClient();
 
 interface message {
   userId: number;
@@ -40,12 +37,12 @@ export const setupSocketIO = (io: Server) => {
       if (clients.has(socket.id)) {
         const user = clients.get(socket.id);
         if (!user) return;
-        socket.to(user.roomname).emit("user-disconnected", user);
         console.log("user disconnected", user);
         clients.delete(socket.id);
-        socket.broadcast
-          .to(user.roomname)
-          .emit("update-clients", { clients: Object.fromEntries(clients) });
+        io.to(user.roomname).emit("user-disconnected", {
+          user,
+          clients: Object.fromEntries(clients),
+        });
       }
     });
     // ----------------- ROOM JOINING -----------------
@@ -124,7 +121,8 @@ export const setupSocketIO = (io: Server) => {
         msgsList: msgsList,
       });
       //send updated client list to all users in room
-      socket.broadcast.to(roomname).emit("update-clients", {
+      socket.broadcast.to(roomname).emit("user-joined", {
+        user: { ...user, roomname },
         clients: Object.fromEntries(clients),
       });
     });
@@ -186,6 +184,7 @@ export const setupSocketIO = (io: Server) => {
 
       const { content, user, roomInfo } = payload;
       socket.to(roomInfo.name).emit("code-change", payload);
+      saveCodeToDB(payload)
     });
     socket.on("change-user-cursor", (payload) => {
       const { user, cursor, roomInfo } = payload;
@@ -222,4 +221,23 @@ export const setupSocketIO = (io: Server) => {
       // io.to(payload.roomInfo.name).emit("run-code", payload);
     });
   });
+};
+
+const saveCodeToDB = async (payload: any) => {
+  const { code, roomInfo } = payload;
+
+  console.log(payload);
+
+  // try {
+  //   const result = await prisma.room.update({
+  //     where: {
+  //       id: roomInfo.id,
+  //     },
+  //     data: {
+  //       code,
+  //     },
+  //   });
+  // } catch (err) {
+  //   console.log(err);
+  // }
 };
