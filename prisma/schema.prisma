@@ -72,11 +72,12 @@ model Exam {
   title        String
   description  String
   coverImg     String
-  startTime    DateTime?    @db.Timestamp(6)
-  endTime      DateTime?    @db.Timestamp(6)
+  startTime    DateTime?    @db.Timestamp()
+  endTime      DateTime?    @db.Timestamp()
   duration     Int?
   marks        Float?
   slug         String       @unique
+  isBounded    Boolean      @default(false)
   // userId       Int
   // User         User      @relation(fields: [userId], references: [id])
   problems     Problem[]
@@ -92,6 +93,7 @@ model Problem {
   title       String
   description String
   difficulty  String
+  starterCode String?
   tags        String[]
   submissions Submission[]
   testCases   Json         @db.Json
