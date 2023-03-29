@@ -15,7 +15,6 @@ router.post(
     const input = req.body.input || "";
     try {
       const result = await runCode(code, lang, input);
-      console.log(result);
       res.json(result);
     } catch (err) {
       console.log("err in saldkfj", err);
@@ -32,21 +31,6 @@ router.get("/rooms", async (req: Request, res: Response) => {
     res.status(404).json({ message: "somethings wrong" });
   }
 });
-
-// router.get("/rooms/:id", async (req: Request, res: Response) => {
-//   const { id } = req.params;
-//   try {
-//     const room = await prisma.room.findFirst({
-//       where: {
-//         id: parseInt(id),
-//       },
-//     });
-//     res.status(200).json(room);
-//   } catch (err) {
-//     console.log("err in saldkfj", err);
-//     res.status(404).json({ message: "somethings wrong" });
-//   }
-// });
 
 export const runCode = async (code: string, lang: string, input: string) => {
   // console.log("input", input)
