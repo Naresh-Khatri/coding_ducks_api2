@@ -9,11 +9,11 @@ export const getAllExams = async (req: Request, res: Response) => {
     let exams;
     if (req.user?.isAdmin)
       exams = await prisma.exam.findMany({
-        orderBy: { id: "asc" },
+        orderBy: { id: "desc" },
       });
     else
       exams = await prisma.exam.findMany({
-        orderBy: { id: "asc" },
+        orderBy: { id: "desc" },
         where: { active: true },
       });
     res.status(200).json(exams);
@@ -104,6 +104,7 @@ export const createExam = async (req: Request, res: Response) => {
       data: {
         ...req.body,
         active: req.body.active === "true" ? true : false,
+        isBounded: req.body.isBounded === "true" ? true : false,
         marks: +req.body.marks,
         coverImg: result.url,
       },
@@ -138,6 +139,7 @@ export const updateExam = async (req: Request, res: Response) => {
         ...req.body,
         marks: +req.body.marks,
         active: req.body.active === "true" ? true : false,
+        isBounded: req.body.isBounded === "true" ? true : false,
       },
     });
     res.status(200).json(updatedExam);
