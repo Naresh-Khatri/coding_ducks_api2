@@ -6,7 +6,7 @@ export const getAllProblems = async (req: Request, res: Response) => {
   try {
     const problemsList = await prisma.problem.findMany({
       orderBy: {
-        id: 'desc'
+        id: "desc",
       },
       include: {
         exam: {
@@ -25,12 +25,25 @@ export const getAllProblems = async (req: Request, res: Response) => {
 };
 export const getExamProblems = async (req: Request, res: Response) => {
   try {
+    //check if user can access this exam
+    const exam = await prisma.exam.findUnique({
+      where: {
+        id: +req.params.examId,
+      },
+      select: {
+        active: true,
+      },
+    });
+    console.log(req.user)
+    if (!exam?.active && !req.user?.isAdmin)
+      return res.status(404).json({ message: "You dont have permission" });
+
     const problemsList = await prisma.problem.findMany({
       where: {
         examId: +req.params.examId,
       },
       orderBy: {
-        order:'asc'
+        order: "asc",
       },
     });
     res.status(200).json(problemsList);
