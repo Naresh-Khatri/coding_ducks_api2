@@ -19,19 +19,6 @@ datasource db {
 //   users        users?  @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 // }
 
-// model submissions {
-//   id           Int       @id @default(autoincrement())
-//   user_id      Int
-//   problem_id   Int
-//   code         String
-//   lang         String    @db.VarChar(10)
-//   total_tests  Int
-//   tests_passed Int
-//   tests        Json      @db.Json
-//   marks        Float
-//   timestamp    DateTime? @default(now()) @db.Timestamp(6)
-// }
-
 model User {
   id           Int       @id @default(autoincrement())
   fullname     String    @db.VarChar(100)
@@ -78,8 +65,7 @@ model Exam {
   marks        Float?
   slug         String       @unique
   isBounded    Boolean      @default(false)
-  // userId       Int
-  // User         User      @relation(fields: [userId], references: [id])
+  warnOnBlur   Boolean      @default(false)
   problems     Problem[]
   participants User[]
   Submission   Submission[]
