@@ -140,6 +140,7 @@ export const updateExam = async (req: Request, res: Response) => {
         marks: +req.body.marks,
         active: req.body.active === "true" ? true : false,
         isBounded: req.body.isBounded === "true" ? true : false,
+        warnOnBlur: req.body.warnOnBlur=== "true" ? true : false,
       },
     });
     res.status(200).json(updatedExam);
