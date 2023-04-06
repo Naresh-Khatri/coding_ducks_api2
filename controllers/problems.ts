@@ -34,7 +34,6 @@ export const getExamProblems = async (req: Request, res: Response) => {
         active: true,
       },
     });
-    console.log(req.user)
     if (!exam?.active && !req.user?.isAdmin)
       return res.status(404).json({ message: "You dont have permission" });
 
