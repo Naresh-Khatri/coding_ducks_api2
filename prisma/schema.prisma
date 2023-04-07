@@ -42,6 +42,7 @@ model User {
 
   messages Message[]
   Room     Room[]
+  Feedback Feedback[]
 }
 
 model File {
@@ -70,7 +71,8 @@ model Exam {
   participants User[]
   Submission   Submission[]
 
-  active Boolean @default(false)
+  active   Boolean    @default(false)
+  Feedback Feedback[]
 }
 
 model Problem {
@@ -148,4 +150,19 @@ model Message {
   user     User     @relation(fields: [userId], references: [id])
   userId   Int
   time     DateTime @default(now()) @db.Timestamp(6)
+}
+
+model Feedback {
+  id                     Int      @id @default(autoincrement())
+  examId                 Int
+  exam                   Exam     @relation(fields: [examId], references: [id])
+  userId                 Int
+  user                   User     @relation(fields: [userId], references: [id])
+  difficulty             Int
+  ui                     Int
+  usefulness             Int
+  overall                Int
+  interestInFutureEvents Boolean
+  comment                String?
+  time                   DateTime @default(now()) @db.Timestamp(6)
 }
