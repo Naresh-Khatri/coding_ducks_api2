@@ -1,20 +1,28 @@
-import { Router } from 'express'
+import { Router } from "express";
 import fileUpload from "express-fileupload";
-import * as examsController from '../controllers/exams'
+import * as examsController from "../controllers/exams";
 
-import { checkIfAuthenticated } from '../middlewares/auth-middleware';
+import { checkIfAuthenticated } from "../middlewares/auth-middleware";
 
-const router = Router()
+const router = Router();
 router.use(fileUpload());
 
 //TODO: add auth
-router.get('/', [checkIfAuthenticated], examsController.getAllExams)
-router.get('/slug/:slug', examsController.getExamUsingSlug)
-router.get('/id/:examId', examsController.getExamUsingId)
-router.get('/getProgress/:examId', [checkIfAuthenticated], examsController.getUserProgress)
-router.post('/', [checkIfAuthenticated], examsController.createExam)
-router.patch('/:examId', [checkIfAuthenticated], examsController.updateExam)
-router.delete('/:examId', [checkIfAuthenticated], examsController.deleteExam)
+router.get("/", [checkIfAuthenticated], examsController.getAllExams);
+router.get("/slug/:slug", examsController.getExamUsingSlug);
+router.get("/id/:examId", examsController.getExamUsingId);
+router.get(
+  "/getProgress/:examId",
+  [checkIfAuthenticated],
+  examsController.getUserProgress
+);
+router.post("/", [checkIfAuthenticated], examsController.createExam);
+router.post(
+  "/feedback",
+  [checkIfAuthenticated],
+  examsController.createFeedback
+);
+router.patch("/:examId", [checkIfAuthenticated], examsController.updateExam);
+router.delete("/:examId", [checkIfAuthenticated], examsController.deleteExam);
 
-export default router
-
+export default router;
