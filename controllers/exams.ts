@@ -140,7 +140,7 @@ export const updateExam = async (req: Request, res: Response) => {
         marks: +req.body.marks,
         active: req.body.active === "true" ? true : false,
         isBounded: req.body.isBounded === "true" ? true : false,
-        warnOnBlur: req.body.warnOnBlur=== "true" ? true : false,
+        warnOnBlur: req.body.warnOnBlur === "true" ? true : false,
       },
     });
     res.status(200).json(updatedExam);
@@ -157,6 +157,37 @@ export const deleteExam = async (req: Request, res: Response) => {
       },
     });
     res.status(200).json({ message: "deleted" });
+  } catch (err) {
+    console.log(err);
+    res.status(404).json({ message: "somethings wrong" });
+  }
+};
+
+export const createFeedback = async (req: Request, res: Response) => {
+  try {
+    console.log(req.body);
+
+    const exam = await prisma.exam.findUnique({
+      where: {
+        slug: req.body.examSlug,
+      },
+    });
+    if (!exam) return res.status(404).json({ message: "exam not found" });
+
+    const fb = {
+      difficulty: req.body.difficulty,
+      ui: req.body.ui,
+      overall: req.body.overall,
+      usefulness: req.body.usefulness,
+      userId: +req.user.userId,
+      interestInFutureEvents: req.body.interestInFutureEvents,
+      comment: req.body.comment,
+      examId: exam.id,
+    };
+    const feedback = await prisma.feedback.create({
+      data: fb,
+    });
+    res.status(200).json(feedback);
   } catch (err) {
     console.log(err);
     res.status(404).json({ message: "somethings wrong" });
