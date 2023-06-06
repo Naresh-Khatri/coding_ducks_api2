@@ -180,7 +180,7 @@ export const setupSocketIO = (io: Server) => {
       }
     });
     socket.on("code-change", (payload) => {
-      console.log("code-change", payload);
+      // console.log("code-change", payload);
 
       const { content, user, roomInfo } = payload;
       socket.to(roomInfo.name).emit("code-change", payload);
@@ -189,11 +189,11 @@ export const setupSocketIO = (io: Server) => {
     socket.on("change-user-cursor", (payload) => {
       const { user, cursor, roomInfo } = payload;
       cursors.set(user.id, cursor);
-      console.log("change-user-cursor", payload);
+      // console.log("change-user-cursor", payload);
       socket.to(roomInfo.name).emit("change-user-cursor", payload);
     });
     socket.on("change-lang", async (payload) => {
-      console.log("change-lang", payload);
+      // console.log("change-lang", payload);
       try {
         const result = await prisma.room.update({
           where: {
@@ -209,10 +209,10 @@ export const setupSocketIO = (io: Server) => {
       }
     });
     socket.on("code-exec", async (payload) => {
-      console.log("run-code", payload);
+      // console.log("run-code", payload);
       io.to(payload.roomInfo.name).emit("code-exec-started", payload);
       const res = await runCode(payload.code, payload.lang, "");
-      console.log(res);
+      // console.log(res);
       io.to(payload.roomInfo.name).emit("code-exec-finished", {
         ...payload,
         res,
@@ -226,7 +226,7 @@ export const setupSocketIO = (io: Server) => {
 const saveCodeToDB = async (payload: any) => {
   const { code, roomInfo } = payload;
 
-  console.log(payload);
+  // console.log(payload);
 
   // try {
   //   const result = await prisma.room.update({
