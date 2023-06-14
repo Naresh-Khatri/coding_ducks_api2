@@ -63,17 +63,23 @@ model Exam {
   Feedback Feedback[]
 }
 
+model ProblemTag {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  problems Problem[]
+}
+
 model Problem {
-  id          Int          @id @default(autoincrement())
-  order       Int          @default(1)
+  id          Int           @id @default(autoincrement())
+  order       Int           @default(1)
   title       String
   description String
   difficulty  String
   starterCode String?
-  tags        String[]
+  tags        ProblemTag[]
   submissions Submission[]
-  testCases   Json         @db.Json
-  exam        Exam         @relation(fields: [examId], references: [id])
+  testCases   Json          @db.Json
+  exam        Exam          @relation(fields: [examId], references: [id])
   examId      Int
 }
 
