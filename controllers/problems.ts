@@ -1,13 +1,16 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export const getAllProblems = async (req: Request, res: Response) => {
   try {
     const problemsList = await prisma.problem.findMany({
-      orderBy: {
-        id: "desc",
-      },
+      orderBy: [
+        {
+          id: "desc",
+        },
+      ],
+
       include: {
         exam: {
           select: {
@@ -18,6 +21,56 @@ export const getAllProblems = async (req: Request, res: Response) => {
       },
     });
     res.status(200).json(problemsList);
+  } catch (err) {
+    console.log(err);
+    res.status(404).json({ message: "somethings wrong" });
+  }
+};
+
+export const getProblemTags = async (req: Request, res: Response) => {
+  try {
+    const tags = await prisma.problemTag.findMany();
+    res.status(200).json({ message: "ok", data: { count: tags.length, tags } });
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+export const getProblemsForProblemPage = async (
+  req: Request,
+  res: Response
+) => {
+  const { query } = req;
+  const { q, sortBy, orderBy, skip, limit } = query;
+  console.log(query);
+  try {
+    const queryObj: Prisma.ProblemFindManyArgs = {
+      select: {
+        id: true,
+        title: true,
+        // slug: true,
+        difficulty: true,
+        tags: true,
+      },
+    };
+    if (q)
+      queryObj.where = { ...queryObj.where, title: { contains: q as string } };
+    if (sortBy)
+      queryObj.orderBy = { [sortBy as string]: orderBy as Prisma.SortOrder };
+
+    if (skip) queryObj.skip = +skip;
+    if (limit) queryObj.take = +limit;
+    const data = await prisma.problem.findMany(queryObj);
+    const problemsList = data.map((problem) => {
+      return {
+        ...problem,
+        slug: problem.title.replace(/\s+/g, "-").toLowerCase(),
+      };
+    });
+
+    const count = await prisma.problem.count();
+
+    res.status(200).json({ message: "ok", data: { problemsList, count } });
   } catch (err) {
     console.log(err);
     res.status(404).json({ message: "somethings wrong" });
@@ -93,8 +146,17 @@ export const deleteProblem = async (req: Request, res: Response) => {
 };
 export const createProblem = async (req: Request, res: Response) => {
   try {
+    console.log(req.body);
+    // Connect multiple records: https://www.prisma.io/docs/concepts/components/prisma-client/relation-queries#connect-multiple-records
     const newProblem = await prisma.problem.create({
-      data: req.body,
+      data: {
+        ...req.body,
+        tags: {
+          connect: req.body.tags.map((tagID: any) => ({
+            id: +tagID,
+          })),
+        },
+      },
     });
     res.status(200).json(newProblem);
   } catch (err) {
