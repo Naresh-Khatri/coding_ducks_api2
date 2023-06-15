@@ -184,7 +184,7 @@ export const setupSocketIO = (io: Server) => {
 
       const { content, user, roomInfo } = payload;
       socket.to(roomInfo.name).emit("code-change", payload);
-      saveCodeToDB(payload)
+      saveCodeToDB(payload);
     });
     socket.on("change-user-cursor", (payload) => {
       const { user, cursor, roomInfo } = payload;
@@ -223,11 +223,22 @@ export const setupSocketIO = (io: Server) => {
   });
 };
 
-const saveCodeToDB = async (payload: any) => {
+const saveCodeToDB = async (payload: {
+  code: string;
+  userr: User;
+  roomInfo: { id: number; name: string };
+}) => {
   const { code, roomInfo } = payload;
 
-  // console.log(payload);
-
+  console.log(payload);
+  await prisma.room.update({
+    where: {
+      id: roomInfo.id,
+    },
+    data: {
+      content: code,
+    },
+  });
   // try {
   //   const result = await prisma.room.update({
   //     where: {
