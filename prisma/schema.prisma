@@ -70,17 +70,19 @@ model ProblemTag {
 }
 
 model Problem {
-  id          Int           @id @default(autoincrement())
-  order       Int           @default(1)
-  title       String
-  description String
-  difficulty  String
-  starterCode String?
-  tags        ProblemTag[]
-  submissions Submission[]
-  testCases   Json          @db.Json
-  exam        Exam          @relation(fields: [examId], references: [id])
-  examId      Int
+  id                Int          @id @default(autoincrement())
+  order             Int          @default(1)
+  title             String
+  slug              String       @unique
+  frontendProblemId Int?         @unique
+  description       String
+  difficulty        String
+  starterCode       String?
+  tags              ProblemTag[]
+  submissions       Submission[]
+  testCases         Json         @db.Json
+  exam              Exam?        @relation(fields: [examId], references: [id])
+  examId            Int?
 }
 
 model Submission {
