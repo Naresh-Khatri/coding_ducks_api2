@@ -28,6 +28,12 @@ model User {
   ExerciseSubmission ExerciseSubmission[]
   Submission         Submission[]
 
+  likedProblems     Problem[]        @relation("ProblemLikes")
+  dislikedProblems  Problem[]        @relation("ProblemDislikes")
+  problemComments   ProblemComment[]
+  upvotedComments   ProblemComment[] @relation("CommentUpvotes")
+  downvotedComments ProblemComment[] @relation("CommentDownvotes")
+
   messages Message[]
   Room     Room[]
   Feedback Feedback[]
@@ -81,8 +87,26 @@ model Problem {
   tags              ProblemTag[]
   submissions       Submission[]
   testCases         Json         @db.Json
-  exam              Exam?        @relation(fields: [examId], references: [id])
-  examId            Int?
+
+  likes    User[]           @relation("ProblemLikes")
+  dislikes User[]           @relation("ProblemDislikes")
+  comments ProblemComment[]
+
+  exam   Exam? @relation(fields: [examId], references: [id])
+  examId Int?
+}
+
+model ProblemComment {
+  id        Int      @id @default(autoincrement())
+  problem   Problem  @relation(fields: [problemId], references: [id])
+  problemId Int
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  text      String
+  time      DateTime @default(now()) @db.Timestamp(6)
+
+  upvotes   User[] @relation("CommentUpvotes")
+  downvotes User[] @relation("CommentDownvotes")
 }
 
 model Submission {
