@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 import { NextFunction, Response, Request } from "express";
 // import { RequestWithUserAndFile } from "../custom_types/request.js";
 import admin from "../firebase/firebase_service.js";
@@ -15,7 +15,11 @@ const getAuthToken = (req: Request) => {
   }
 };
 
-export const checkIfAuthenticated = async (req: Request, res: Response, next: NextFunction) => {
+export const checkIfAuthenticated = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const authToken = getAuthToken(req);
     // console.log(req.headers.authorization);
@@ -25,15 +29,19 @@ export const checkIfAuthenticated = async (req: Request, res: Response, next: Ne
     const decodedUser = await admin.auth().verifyIdToken(authToken);
     const userInDB = await prisma.user.findUnique({
       where: {
-        googleUID: decodedUser.user_id
+        googleUID: decodedUser.user_id,
       },
       select: {
         id: true,
         isAdmin: true,
-
-      }
-    })
-    req.user = { ...decodedUser, userId: userInDB?.id, isAdmin: userInDB?.isAdmin };
+      },
+    });
+    if (!userInDB) return new Error("User not found");
+    req.user = {
+      ...decodedUser,
+      userId: userInDB?.id,
+      isAdmin: userInDB?.isAdmin,
+    };
     next();
   } catch (err: any) {
     // console.error(err);
@@ -46,5 +54,21 @@ export const checkIfAuthenticated = async (req: Request, res: Response, next: Ne
     } else {
       return res.status(500).send({ message: "Internal Server Error" });
     }
+  }
+};
+
+export const checkIfAdmin = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user?.isAdmin) {
+      return res.status(401).send({ message: "admins only", code: 401 });
+    }
+    next();
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({ message: "Internal Server Error" });
   }
 };
