@@ -76,17 +76,18 @@ model ProblemTag {
 }
 
 model Problem {
-  id                Int          @id @default(autoincrement())
-  order             Int          @default(1)
+  id                Int                  @id @default(autoincrement())
+  order             Int                  @default(1)
   title             String
-  slug              String       @unique
-  frontendProblemId Int?         @unique
+  slug              String               @unique
+  frontendProblemId Int?                 @unique
   description       String
   difficulty        String
   starterCode       String?
+  starterCodes      ProblemStarterCode[]
   tags              ProblemTag[]
   submissions       Submission[]
-  testCases         Json         @db.Json
+  testCases         Json                 @db.Json
 
   likes    User[]           @relation("ProblemLikes")
   dislikes User[]           @relation("ProblemDislikes")
@@ -94,6 +95,14 @@ model Problem {
 
   exam   Exam? @relation(fields: [examId], references: [id])
   examId Int?
+}
+
+model ProblemStarterCode {
+  id        Int     @id @default(autoincrement())
+  lang      String
+  code      String
+  problemId Int
+  problem   Problem @relation(references: [id], fields: [problemId])
 }
 
 model ProblemComment {
@@ -110,13 +119,14 @@ model ProblemComment {
 }
 
 model Submission {
-  id           Int    @id @default(autoincrement())
+  id           Int     @id @default(autoincrement())
   code         String
-  lang         String @db.VarChar(10)
+  lang         String  @db.VarChar(10)
   total_tests  Int
   tests_passed Int
-  tests        Json   @db.Json
+  tests        Json    @db.Json
   marks        Float
+  isAccepted    Boolean @default(false)
 
   timestamp DateTime? @default(now()) @db.Timestamp(6)
 
