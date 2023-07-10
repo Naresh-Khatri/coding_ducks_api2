@@ -5,14 +5,12 @@ const prisma = new PrismaClient();
 
 export const getAllProblems = async (req: Request, res: Response) => {
   try {
-    const problemsList = await prisma.problem.findMany({
-      orderBy: [
-        { examId: "desc" },
-        { order: "desc" },
-        {
-          frontendProblemId: "desc",
-        },
-      ],
+    console.log(req.query);
+    const q = {
+      where: {
+        examId: null,
+      },
+      orderBy: [{ frontendProblemId: "desc" }],
 
       include: {
         tags: true,
@@ -24,7 +22,20 @@ export const getAllProblems = async (req: Request, res: Response) => {
           },
         },
       },
-    });
+    } as Prisma.ProblemFindManyArgs;
+
+    if (req.query?.allowExams) {
+      q.where = {
+        examId: undefined,
+      };
+      q.orderBy = [
+        { examId: "desc" },
+        { order: "desc" },
+        { frontendProblemId: "desc" },
+      ];
+    }
+
+    const problemsList = await prisma.problem.findMany(q);
     res.status(200).json(problemsList);
   } catch (err) {
     console.log(err);
@@ -58,6 +69,28 @@ export const getProblemBySlug = async (req: Request, res: Response) => {
         starterCodes: true,
       },
     });
+
+    // if we have req.user, then we can check if the user has solved the problem
+    const userCorrectSub = await prisma.submission.findFirst({
+      where: {
+        userId: req.user?.userId,
+        problemId: problem?.id,
+      },
+      select: {
+        id: true,
+        marks: true,
+      },
+      orderBy: {
+        marks: "desc",
+      },
+    });
+    const status =
+      userCorrectSub?.marks === 10
+        ? "solved"
+        : userCorrectSub?.marks === 0
+        ? "tried"
+        : "unsolved";
+
     const submissionCount = await prisma.submission.count({
       where: {
         problemId: problem?.id,
@@ -75,9 +108,16 @@ export const getProblemBySlug = async (req: Request, res: Response) => {
         : (acceptedCount / submissionCount) * 100;
 
     if (!problem) return res.status(404).json({ message: "problem not found" });
-    res
-      .status(200)
-      .json({ data: { ...problem, submissionCount, acceptedCount, accuracy } });
+    res.status(200).json({
+      data: {
+        ...problem,
+        submissionCount,
+        acceptedCount,
+        accuracy,
+        testing: "lol",
+        status,
+      },
+    });
   } catch (err) {
     console.log(err);
     res.status(404).json({ message: "somethings wrong" });
@@ -294,19 +334,17 @@ export const getProblem = async (req: Request, res: Response) => {
     res.status(404).json({ message: "somethings wrong" });
   }
 };
+
+// TODO: optimize tags update logic
 export const updateProblem = async (req: Request, res: Response) => {
   try {
-    const updatedProblem = await prisma.problem.update({
+    let updatedProblem = await prisma.problem.update({
       where: {
         id: +req.params.problemId,
       },
       data: {
         ...req.body,
-        tags: {
-          connect: req.body.tags.map((tagID: any) => ({
-            id: +tagID,
-          })),
-        },
+        tags: {},
         starterCodes: {
           updateMany: req.body.starterCodes.map((starterCode: any) => ({
             where: {
@@ -318,7 +356,75 @@ export const updateProblem = async (req: Request, res: Response) => {
           })),
         },
       },
+      include: {
+        starterCodes: true,
+        tags: true,
+      },
     });
+
+    await prisma.problem.update({
+      where: {
+        id: +req.params.problemId,
+      },
+      data: {
+        tags: {
+          disconnect: updatedProblem.tags.map((tag: any) => ({
+            id: tag.id,
+          })),
+        },
+      },
+    });
+    await prisma.problem.update({
+      where: {
+        id: +req.params.problemId,
+      },
+      data: {
+        tags: {
+          connectOrCreate: req.body.tags.map((tag: any) => ({
+            where: { name: tag.name },
+            create: { name: tag.name },
+          })),
+        },
+      },
+    });
+
+    // await prisma.problem.update({
+    //   where: {
+    //     id: +req.params.problemId,
+    //   },
+    //   data: {
+    //     tags: {
+    //       disconnect: savedTags.map((tagId:number) => ({ id: tagId })),
+    //       // connectOrCreate: req.body.tags.map((tag: any) => ({
+    //       //   where: { name: tag.name },
+    //       //   create: { name: tag.name },
+    //       // })),
+    //     },
+    //   },
+    // });
+
+    // TODO: remove starter codes if there are no starter codes in the request
+    // if there were no starter codes before
+    if (updatedProblem.starterCodes.length === 0) {
+      updatedProblem = await prisma.problem.update({
+        where: {
+          id: +req.params.problemId,
+        },
+        data: {
+          starterCodes: {
+            create: req.body.starterCodes.map((starterCode: any) => ({
+              code: starterCode.code,
+              lang: starterCode.lang,
+            })),
+          },
+        },
+        include: {
+          starterCodes: true,
+          tags: true,
+        },
+      });
+    }
+
     res.status(200).json(updatedProblem);
   } catch (err) {
     console.log(err);
@@ -350,7 +456,7 @@ export const createProblem = async (req: Request, res: Response) => {
       data: {
         ...req.body,
         tags: {
-          connect: req.body.tags.map((tagID: any) => ({
+          connect: req.body.tags.map((tagID: number) => ({
             id: +tagID,
           })),
         },
