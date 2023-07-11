@@ -34,6 +34,7 @@ export const checkIfAuthenticated = async (
       select: {
         id: true,
         isAdmin: true,
+        isNoob: true,
       },
     });
     if (!userInDB) return new Error("User not found");
@@ -41,6 +42,7 @@ export const checkIfAuthenticated = async (
       ...decodedUser,
       userId: userInDB?.id,
       isAdmin: userInDB?.isAdmin,
+      isNoob: userInDB?.isNoob,
     };
     next();
   } catch (err: any) {
