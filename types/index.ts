@@ -16,7 +16,7 @@ export interface ITestCase {
   isCorrect?: boolean;
 }
 
-export interface ITestCasesResult extends ITestCase, Result {
+export interface ITestCasesResult extends ITestCase {
   results: any[];
   isCorrect: boolean;
   passedCount: number;
@@ -26,4 +26,17 @@ export interface ITestCasesResult extends ITestCase, Result {
 export interface ISubmissionResult extends ITestCasesResult {
   testcaseResults: any[];
   submissionId: number;
+}
+
+export interface IEvalResult {
+  errorOccurred?: boolean;
+  errorMessage?: string;
+  errorType?: string;
+  errorIndex?: number;
+  input?: string;
+  output?: string;
+  actualOutput?: string;
+  result?: Result;
+  isPublic?: boolean;
+  isCorrect?: boolean;
 }
