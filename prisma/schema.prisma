@@ -20,6 +20,7 @@ model User {
   files        File[]
   bio          String?
   isAdmin      Boolean   @default(false)
+  isNoob       Boolean   @default(true)
 
   exams Exam[]
 
@@ -126,7 +127,7 @@ model Submission {
   tests_passed Int
   tests        Json    @db.Json
   marks        Float
-  isAccepted    Boolean @default(false)
+  isAccepted   Boolean @default(false)
 
   timestamp DateTime? @default(now()) @db.Timestamp(6)
 
