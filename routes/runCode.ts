@@ -57,13 +57,13 @@ const evaluateResult = async (problemId: Number, code: string, lang: Lang) => {
               output,
               actualOutput: result.stdout,
               result,
-              isPublic: false,
+              isPublic: true,
               isCorrect: verifyOutput(output, result.stdout),
             };
           else
             return {
               result,
-              isPublic: true,
+              isPublic: false,
               isCorrect: verifyOutput(output, result.stdout),
             };
         })
@@ -108,12 +108,34 @@ const saveInDB = async (result: any, req: Request) => {
         total_tests: result.totalCount,
         tests_passed: result.passedCount,
         marks: result.totalCount === result.passedCount ? 10 : 0,
+        isAccepted: result.totalCount === result.passedCount,
         examId: req.body.examId,
         problemId: req.body.problemId,
         tests: result.results,
       },
     });
     result.submissionId = submission.id;
+
+    // check if this user has completed all problems of 'tutorial' diffLevel
+    if (req.user.isNoob) {
+      const subs = await prisma.submission.findMany({
+        distinct: ["problemId"],
+        where: {
+          userId: req.user.userId,
+          marks: 10,
+          Problem: {
+            difficulty: "tutorial",
+          },
+        },
+      });
+      if (subs.length === 10)
+        await prisma.user.update({
+          where: { id: req.user.userId },
+          data: { isNoob: false },
+        });
+
+      result.tutorialProblemsSolved = subs.length;
+    }
     resolve();
   });
 };
@@ -121,8 +143,8 @@ const saveInDB = async (result: any, req: Request) => {
 const verifyOutput = (expectedOutput: string, actualOutput: string) => {
   // console.log(expectedOutput.trim().replaceAll(/\t|\n|\r| /g,""), actualOutput.trim().replaceAll(/\t|\n|\r| /g,""))
   return (
-    expectedOutput.trim().replaceAll(/\t|\n|\r| /g, "") ===
-    actualOutput.trim().replaceAll(/\t|\n|\r| /g, "")
+    expectedOutput?.trim().replaceAll(/\t|\n|\r| /g, "") ===
+    actualOutput?.trim().replaceAll(/\t|\n|\r| /g, "")
   );
 };
 
