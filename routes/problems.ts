@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import * as problemsController from '../controllers/problems'
-import { checkIfAdmin, checkIfAuthenticated } from '../middlewares/auth-middleware'
+import { addUserToRequest, checkIfAdmin, checkIfAuthenticated } from '../middlewares/auth-middleware'
 
 const router = Router()
 
@@ -10,7 +10,7 @@ router.post('/', [checkIfAuthenticated], problemsController.createProblem)
 
 router.get('/tags', problemsController.getProblemTags)
 
-router.get('/page', [checkIfAuthenticated], problemsController.getProblemsForProblemPage)
+router.get('/page', [addUserToRequest], problemsController.getProblemsForProblemPage)
 router.get('/slug/:slug', problemsController.getProblemBySlug)
 router.get('/:problemId', [checkIfAuthenticated], problemsController.getProblem)
 router.get('/examProblems/:examId',[checkIfAuthenticated], problemsController.getExamProblems)
