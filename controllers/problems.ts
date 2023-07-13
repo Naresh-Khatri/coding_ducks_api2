@@ -114,7 +114,6 @@ export const getProblemBySlug = async (req: Request, res: Response) => {
         submissionCount,
         acceptedCount,
         accuracy,
-        testing: "lol",
         status,
       },
     });
@@ -235,7 +234,6 @@ export const getProblemsForProblemPage = async (
 ) => {
   const { query } = req;
   const { q, sortBy, orderBy, skip, limit } = query;
-  console.log(query);
   try {
     const queryObj: Prisma.ProblemFindManyArgs = {
       where: {
@@ -251,6 +249,7 @@ export const getProblemsForProblemPage = async (
         submissions: {
           distinct: ["userId"],
           select: {
+            userId: true,
             User: {
               select: {
                 username: true,
