@@ -248,6 +248,9 @@ export const getProblemsForProblemPage = async (
         frontendProblemId: true,
         submissions: {
           distinct: ["userId"],
+          where: {
+            marks: 10,
+          },
           select: {
             userId: true,
             User: {
