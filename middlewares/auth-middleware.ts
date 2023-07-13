@@ -15,6 +15,40 @@ const getAuthToken = (req: Request) => {
   }
 };
 
+export const addUserToRequest = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const authToken = getAuthToken(req);
+    if (!authToken) {
+      return next();
+    }
+    const decodedUser = await admin.auth().verifyIdToken(authToken);
+    const userInDB = await prisma.user.findUnique({
+      where: {
+        googleUID: decodedUser.user_id,
+      },
+      select: {
+        id: true,
+        isAdmin: true,
+        isNoob: true,
+      },
+    });
+    if (!userInDB) return next();
+    req.user = {
+      ...decodedUser,
+      userId: userInDB?.id,
+      isAdmin: userInDB?.isAdmin,
+      isNoob: userInDB?.isNoob,
+    };
+    next();
+  } catch (err: any) {
+    next();
+  }
+};
+
 export const checkIfAuthenticated = async (
   req: Request,
   res: Response,

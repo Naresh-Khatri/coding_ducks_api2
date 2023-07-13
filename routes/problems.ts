@@ -10,7 +10,7 @@ router.post('/', [checkIfAuthenticated], problemsController.createProblem)
 
 router.get('/tags', problemsController.getProblemTags)
 
-router.get('/page', problemsController.getProblemsForProblemPage)
+router.get('/page', [checkIfAuthenticated], problemsController.getProblemsForProblemPage)
 router.get('/slug/:slug', problemsController.getProblemBySlug)
 router.get('/:problemId', [checkIfAuthenticated], problemsController.getProblem)
 router.get('/examProblems/:examId',[checkIfAuthenticated], problemsController.getExamProblems)
