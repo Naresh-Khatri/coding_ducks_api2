@@ -141,11 +141,15 @@ export const getLastSubmission = async (req: IRequest, res: Response) => {
       where: {
         problemId: +problemId,
         lang,
-        marks: 10,
       },
-      orderBy: {
-        timestamp: "desc",
-      },
+      orderBy: [
+        {
+          marks: "desc",
+        },
+        {
+          timestamp: "desc",
+        },
+      ],
     });
     if (!sub)
       return res.status(404).json({
