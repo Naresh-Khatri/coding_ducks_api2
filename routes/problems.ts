@@ -15,7 +15,7 @@ router.get('/slug/:slug', [addUserToRequest], problemsController.getProblemBySlu
 router.get('/:problemId', [checkIfAuthenticated], problemsController.getProblem)
 router.get('/examProblems/:examId',[checkIfAuthenticated], problemsController.getExamProblems)
 
-router.get('/:problemId/ratings/', [], problemsController.getProblemRating)
+router.get('/:problemId/ratings/', [addUserToRequest], problemsController.getProblemRating)
 router.patch('/:problemId/ratings/', [checkIfAuthenticated], problemsController.updateProblemRating)
 
 router.get('/:problemId/getLastSubmission', [checkIfAuthenticated], problemsController.getLastSubmission)
