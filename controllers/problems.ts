@@ -176,13 +176,14 @@ export const getProblemRating = async (req: Request, res: Response) => {
       },
     });
 
-    let rating = "none";
-
     const likes = userRating?.likes.length;
     const dislikes = userRating?.dislikes.length;
 
-    if (likes && likes > 0) rating = "like";
-    else if (dislikes && dislikes > 0) rating = "dislike";
+    let rating = "none";
+    if (req.user?.userId) {
+      if (likes && likes > 0) rating = "like";
+      else if (dislikes && dislikes > 0) rating = "dislike";
+    }
 
     res.status(200).json({ data: { rating: problem, userRating: rating } });
   } catch (err) {
