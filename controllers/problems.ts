@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { Prisma, PrismaClient, Problem } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { IProblemWithSubmissions } from "../types";
 const prisma = new PrismaClient();
 
@@ -253,12 +253,16 @@ export const getProblemsForProblemPage = async (
           },
           select: {
             userId: true,
+            timestamp: true,
             User: {
               select: {
                 username: true,
                 photoURL: true,
               },
             },
+          },
+          orderBy: {
+            timestamp: "desc",
           },
         },
       },
