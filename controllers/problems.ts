@@ -70,26 +70,29 @@ export const getProblemBySlug = async (req: Request, res: Response) => {
       },
     });
 
+    let status = "unsolved";
     // if we have req.user, then we can check if the user has solved the problem
-    const userCorrectSub = await prisma.submission.findFirst({
-      where: {
-        userId: req.user?.userId,
-        problemId: problem?.id,
-      },
-      select: {
-        id: true,
-        marks: true,
-      },
-      orderBy: {
-        marks: "desc",
-      },
-    });
-    const status =
-      userCorrectSub?.marks === 10
-        ? "solved"
-        : userCorrectSub?.marks === 0
-        ? "tried"
-        : "unsolved";
+    if (req.user?.userId) {
+      const userCorrectSub = await prisma.submission.findFirst({
+        where: {
+          userId: req.user?.userId,
+          problemId: problem?.id,
+        },
+        select: {
+          id: true,
+          marks: true,
+        },
+        orderBy: {
+          marks: "desc",
+        },
+      });
+      status =
+        userCorrectSub?.marks === 10
+          ? "solved"
+          : userCorrectSub?.marks === 0
+          ? "tried"
+          : "unsolved";
+    }
 
     const submissionCount = await prisma.submission.count({
       where: {
