@@ -141,6 +141,7 @@ export const getLastSubmission = async (req: IRequest, res: Response) => {
       where: {
         problemId: +problemId,
         lang,
+        userId: req.user?.userId,
       },
       orderBy: [
         {
