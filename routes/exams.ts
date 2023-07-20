@@ -2,13 +2,13 @@ import { Router } from "express";
 import fileUpload from "express-fileupload";
 import * as examsController from "../controllers/exams";
 
-import { checkIfAuthenticated } from "../middlewares/auth-middleware";
+import { addUserToRequest, checkIfAuthenticated } from "../middlewares/auth-middleware";
 
 const router = Router();
 router.use(fileUpload());
 
 //TODO: add auth
-router.get("/", [checkIfAuthenticated], examsController.getAllExams);
+router.get("/", [addUserToRequest], examsController.getAllExams);
 router.get("/slug/:slug", examsController.getExamUsingSlug);
 router.get("/id/:examId", examsController.getExamUsingId);
 router.get(
