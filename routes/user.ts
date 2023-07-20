@@ -8,7 +8,7 @@ router.use(fileUpload());
 
 router.get('/', userController.getUsers);
 router.get('/:gid', userController.getUser);
-router.get('/username/:username/progress', userController.getUserProgress);
+router.get('/username/:username/stats', userController.getUserStats);
 router.get('/username/:username', userController.getUserUsingUsername);
 router.patch('/', [checkIfAuthenticated], userController.updateUser);
 router.post('/checkUsername', userController.checkUsername);
