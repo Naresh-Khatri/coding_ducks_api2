@@ -40,3 +40,13 @@ export interface IEvalResult {
   isPublic?: boolean;
   isCorrect?: boolean;
 }
+
+
+export type ILeague =
+  | "noob"
+  | "beginner"
+  | "intermediate"
+  | "advance"
+  | "expert"
+  | "master"
+  | "grandmaster";
