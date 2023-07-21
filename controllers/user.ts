@@ -27,6 +27,7 @@ export const getUsers = async (req: Request, res: Response) => {
         username: true,
         photoURL: true,
         registeredAt: true,
+        updatedAt: true,
       },
     });
     //also provide ranks
