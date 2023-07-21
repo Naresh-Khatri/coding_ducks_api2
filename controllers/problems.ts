@@ -250,6 +250,7 @@ export const getProblemsForProblemPage = async (
         difficulty: true,
         tags: true,
         frontendProblemId: true,
+        updatedAt: true,
         submissions: {
           distinct: ["userId"],
           where: {
