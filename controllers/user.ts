@@ -1,25 +1,13 @@
 import { Request, Response } from "express";
-
 import { Prisma, PrismaClient } from "@prisma/client";
 import fileUpload from "express-fileupload";
 import imageKit from "../imagekit/config";
 import { ILeague } from "../types";
+
 const prisma = new PrismaClient();
 
 export const getUsers = async (req: Request, res: Response) => {
-  //get users in order of their submission marks total
   try {
-    const submissions = await prisma.submission.findMany({
-      distinct: ["userId", "problemId"],
-      where: {
-        marks: 10,
-      },
-      select: {
-        userId: true,
-        marks: true,
-        problemId: true,
-      },
-    });
     const users = await prisma.user.findMany({
       select: {
         id: true,
@@ -29,27 +17,14 @@ export const getUsers = async (req: Request, res: Response) => {
         registeredAt: true,
         updatedAt: true,
       },
+      orderBy: {
+        points: "desc",
+      },
     });
     //also provide ranks
-
-    const rankedUsers = users
-      .map((user) => {
-        const userSubmissions = submissions.filter(
-          (submission) => submission.userId === user.id
-        );
-        const totalMarks = userSubmissions.reduce(
-          (acc, curr) => acc + curr.marks,
-          0
-        );
-        return { ...user, totalMarks, rank: 1 };
-      })
-      .sort((a, b) => b.totalMarks - a.totalMarks);
-
-    let rank = 1;
-    for (let i = 1; i < rankedUsers.length; i++) {
-      if (rankedUsers[i].totalMarks < rankedUsers[i - 1].totalMarks) rank++;
-      rankedUsers[i].rank = rank;
-    }
+    const rankedUsers = users.map((u, idx) => {
+      return { ...u, rank: idx + 1 };
+    });
 
     res.json({ data: rankedUsers, message: "success", code: 69 });
   } catch (err) {
@@ -113,7 +88,17 @@ export const getUserUsingUsername = async (req: Request, res: Response) => {
   try {
     const user = await prisma.user.findFirst({
       where: { username: { equals: req.params.username, mode: "insensitive" } },
-      include: {
+      select: {
+        id: true,
+        bio: true,
+        fullname: true,
+        username: true,
+        isAdmin: true,
+        isNoob: true,
+        lastLoginAt: true,
+        points: true,
+        registeredAt: true,
+        photoURL: true,
         followedBy: {
           select: {
             id: true,
@@ -253,7 +238,10 @@ export const getUserStats = async (req: Request, res: Response) => {
           mode: "insensitive",
         },
       },
-      include: {
+      select: {
+        id: true,
+        username: true,
+        points: true,
         Submission: {
           distinct: "problemId",
           orderBy: {
@@ -279,23 +267,116 @@ export const getUserStats = async (req: Request, res: Response) => {
     });
     ``;
     if (!user) return res.status(404).json({ message: "user not found" });
-    const result: any =
-      await prisma.$queryRaw`SELECT timestamp::date, COUNT(*)::int
-FROM "Submission"
-WHERE "userId" = ${user.id}
-GROUP BY timestamp::date
-ORDER BY timestamp::date ASC;`;
 
     // ----------------- DAILY SUBMISSIONS -----------------
-    const dailySubmissions = result.map((sub: any) => {
-      return {
-        date: sub.timestamp.toISOString().split("T")[0],
-        count: sub.count,
-      };
+    // const allSubmissions: any =
+    //   await prisma.$queryRaw`SELECT timestamp::date, COUNT(*)::int
+    //     FROM "Submission"
+    //     WHERE "userId" = ${user.id}
+    //     GROUP BY timestamp::date
+    //     ORDER BY timestamp::date ASC;`;
+
+    // const dailySubmissions = user?.Submission?.((sub: any) => {
+    //   return {
+    //     date: sub.timestamp.toISOString().split("T")[0],
+    //     count: sub.count,
+    //   };
+    // });
+    const allSubmissions = await prisma.submission.findMany({
+      where: { userId: user.id },
+      select: {
+        timestamp: true,
+        examId: true,
+      },
+      orderBy: {
+        timestamp: "desc",
+      },
     });
+
+    const dailySubmissions = allSubmissions.reduce((acc, curr) => {
+      const date = curr.timestamp.toISOString().split("T")[0];
+      if (acc.length === 0) {
+        acc.push({ date, count: 1, examId: curr?.examId });
+        return acc;
+      }
+      const lastSub = acc[acc.length - 1];
+      if (lastSub.date === date) {
+        lastSub.count += 1;
+      } else {
+        acc.push({ date, count: 1, examId: curr?.examId });
+      }
+      return acc;
+    }, [] as { date: string; count: number; examId: number | null }[]);
+
+    // ----------------- STREAK -----------------
+    const subsCountByDate = allSubmissions.reduce((agg: any, currSub: any) => {
+      if (currSub.examId) return agg;
+
+      const date = currSub.timestamp.toISOString().split("T")[0];
+
+      if (agg.length === 0) {
+        agg.push({ date, count: 1 });
+        return agg;
+      }
+      if (agg[agg.length - 1]?.date === date) agg[agg.length - 1].count++;
+      else agg.push({ date, count: 1 });
+      return agg;
+    }, [] as { date: string; count: number }[]);
+    // console.log(subsCountByDate);
+
+    interface IDateCount {
+      date: string;
+      count: number;
+    }
+    type Streak = IDateCount[];
+
+    function calculateStreaks(dateObjects: IDateCount[]): {
+      streaks: Streak[];
+      longestStreak: number;
+      streakActive: boolean;
+    } {
+      // Convert date strings to Date objects
+      const dates: Date[] = dateObjects.map(
+        (dateObj) => new Date(dateObj.date)
+      );
+
+      const streaks: Streak[] = [];
+      let currentStreak: Streak = [];
+
+      for (let i = 0; i < dates.length; i++) {
+        const diffInMilliseconds: number =
+          i > 0 ? dates[i - 1].getTime() - dates[i].getTime() : 0;
+
+        if (diffInMilliseconds === 86400000) {
+          // 86400000 milliseconds = 1 day
+          currentStreak.push(dateObjects[i]);
+        } else {
+          if (currentStreak.length > 1) {
+            streaks.push(currentStreak);
+          }
+          currentStreak = [dateObjects[i]];
+        }
+      }
+
+      // Check the last streak
+      if (currentStreak.length > 1) {
+        streaks.push(currentStreak);
+      }
+
+      const longestStreak = Math.max(...streaks.map((streak) => streak.length));
+      const streakActive = streaks?.at(-1)?.at(-1)
+        ? streaks.at(-1)?.at(-1)?.date ===
+          new Date().toISOString().split("T")[0]
+        : false;
+      return { streakActive, streaks, longestStreak };
+    }
+
+    const { streaks, longestStreak, streakActive } =
+      calculateStreaks(subsCountByDate);
 
     // ----------------- SUBMISSIONS BY EXAM -----------------
     const newSub = user?.Submission.reduce((acc, sub) => {
+      if (sub.Exam == null) return acc;
       const examId = sub.Exam.id;
       if (acc[examId] == null) acc[examId] = [];
       acc[examId].push({
@@ -312,8 +393,13 @@ ORDER BY timestamp::date ASC;`;
     // ----------------- PROBLEMS SOLVED -----------------
     const totalProblemsSolved = Object.keys(
       user.Submission.reduce((acc, curr) => {
-        if (acc[curr.problemId] == null && curr.isAccepted === true)
+        if (
+          acc[curr.problemId] == null &&
+          !curr.Exam &&
+          curr.isAccepted === true
+        ) {
           acc[curr.problemId] = true;
+        }
         return acc;
       }, {} as any)
     ).length;
@@ -322,18 +408,7 @@ ORDER BY timestamp::date ASC;`;
     const accuracy = ((totalProblemsSolved / totalSubCount) * 100).toFixed(1);
 
     // ----------------- POINTS -----------------
-    const points = user.Submission.reduce((curr, agg) => {
-      const diff = agg.Problem.difficulty;
-      const point =
-        diff === "tutorial"
-          ? 1
-          : diff === "easy"
-          ? 2
-          : diff === "medium"
-          ? 3
-          : 4;
-      return curr + point;
-    }, 0);
+    const points = user.points;
 
     // ----------------- LEAGUE -----------------
     const league: ILeague = (() => {
@@ -346,36 +421,26 @@ ORDER BY timestamp::date ASC;`;
       else return "grandmaster";
     })();
 
-    // ----------------- STREAK -----------------
-    // should start from current date
-    const streak = dailySubmissions.reduce((curr: any, agg: any) => {
-      if (curr.length === 0) {
-        curr.push([agg]);
-        return curr;
-      }
-      const lastSub = curr[curr.length - 1][curr[curr.length - 1].length - 1];
-      const lastSubDate = new Date(lastSub.date);
-      const currSubDate = new Date(agg.date);
-      const diff = Math.abs(
-        Math.floor((currSubDate.getTime() - lastSubDate.getTime()) / 86400000)
-      );
-      if (diff === 1) {
-        curr[curr.length - 1].push(agg);
-      } else {
-        curr.push([agg]);
-      }
-      return curr;
-    }, []);
+    // ----------------- RANK -----------------
+    const rankedUsers = await prisma.user.findMany({
+      select: {
+        id: true,
+        points: true,
+      },
+      orderBy: {
+        points: "desc",
+      },
+    });
+    const rank = rankedUsers.findIndex((u) => u.id === user.id) + 1;
 
-    const longestStreak = streak.reduce(
-      (curr: any, agg: any) => (curr.length > agg.length ? curr : agg),
-      []
-    );
+    // ----------------- CALCULATE RANK OF USER-----------------
 
     res.status(200).json({
       data: {
-        streak,
+        rank,
+        streaks,
         longestStreak,
+        streakActive,
         totalProblemsSolved,
         totalSubCount,
         league,
@@ -409,7 +474,7 @@ export const uploadProfilePicture = async (req: Request, res: Response) => {
         { name: "google-auto-tagging", maxTags: 5, minConfidence: 95 },
       ],
     });
-    console.log(result);
+    // console.log(result);
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
