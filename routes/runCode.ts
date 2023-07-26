@@ -100,6 +100,44 @@ const getErrorIndex = (stderr: string, lang: Lang) => {
 // this also adds subId to result
 const saveInDB = async (result: any, req: Request) => {
   return new Promise<void>(async (resolve, reject) => {
+    // increment user's point if its first accepted submission
+    const previousAcceptedSubs = await prisma.submission.count({
+      where: {
+        userId: req.user.userId,
+        problemId: req.body.problemId,
+        isAccepted: true,
+      },
+    });
+    if (previousAcceptedSubs === 0) {
+      const problem = await prisma.problem.findUnique({
+        where: {
+          id: req.body.problemId,
+        },
+        select: {
+          difficulty: true,
+        },
+      });
+      const diff = problem?.difficulty;
+      const pointsToAdd =
+        diff === "tutorial"
+          ? 1
+          : diff === "easy"
+          ? 2
+          : diff === "medium"
+          ? 3
+          : 4;
+      await prisma.user.update({
+        where: {
+          id: req.user.userId,
+        },
+        data: {
+          points: {
+            increment: pointsToAdd,
+          },
+        },
+      });
+    }
+    console.log("examId", req.body.examId);
     const submission = await prisma.submission.create({
       data: {
         code: req.body.code,
