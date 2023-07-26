@@ -18,6 +18,7 @@ model User {
   lastLoginAt  DateTime? @db.Timestamp(6)
   username     String    @unique @db.VarChar(30)
   files        File[]
+  points       Int       @default(0)
   bio          String?
   isAdmin      Boolean   @default(false)
   isNoob       Boolean   @default(true)
@@ -40,7 +41,7 @@ model User {
   Feedback Feedback[]
 
   createdAt DateTime @default(now()) @db.Timestamp(6)
-  updatedAt DateTime @updatedAt @db.Timestamp(6) 
+  updatedAt DateTime @updatedAt @db.Timestamp(6)
 }
 
 model File {
@@ -143,8 +144,8 @@ model Submission {
 
   timestamp DateTime @default(now()) @db.Timestamp(6)
 
-  Exam      Exam    @relation(fields: [examId], references: [id])
-  examId    Int     @default(2)
+  Exam      Exam?   @relation(fields: [examId], references: [id])
+  examId    Int?
   Problem   Problem @relation(fields: [problemId], references: [id])
   problemId Int
   userId    Int
