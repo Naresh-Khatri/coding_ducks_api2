@@ -14,8 +14,6 @@ export const getUsers = async (req: Request, res: Response) => {
         fullname: true,
         username: true,
         photoURL: true,
-        registeredAt: true,
-        updatedAt: true,
       },
       orderBy: {
         points: "desc",
@@ -269,19 +267,6 @@ export const getUserStats = async (req: Request, res: Response) => {
     if (!user) return res.status(404).json({ message: "user not found" });
 
     // ----------------- DAILY SUBMISSIONS -----------------
-    // const allSubmissions: any =
-    //   await prisma.$queryRaw`SELECT timestamp::date, COUNT(*)::int
-    //     FROM "Submission"
-    //     WHERE "userId" = ${user.id}
-    //     GROUP BY timestamp::date
-    //     ORDER BY timestamp::date ASC;`;
-
-    // const dailySubmissions = user?.Submission?.((sub: any) => {
-    //   return {
-    //     date: sub.timestamp.toISOString().split("T")[0],
-    //     count: sub.count,
-    //   };
-    // });
     const allSubmissions = await prisma.submission.findMany({
       where: { userId: user.id },
       select: {
