@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { IProblemWithSubmissions } from "../types";
+import { create } from "domain";
 const prisma = new PrismaClient();
 
 export const getAllProblems = async (req: Request, res: Response) => {
@@ -262,6 +263,7 @@ export const getProblemsForProblemPage = async (
             User: {
               select: {
                 username: true,
+                fullname: true,
                 photoURL: true,
               },
             },
@@ -480,6 +482,44 @@ export const createProblem = async (req: Request, res: Response) => {
       },
     });
     res.status(200).json(newProblem);
+  } catch (err) {
+    console.log(err);
+    res.status(404).json({ message: "somethings wrong" });
+  }
+};
+
+export const getSolvedByList = async (req: Request, res: Response) => {
+  try {
+    const { problemId } = req.params;
+    const solvedByList = await prisma.submission.findMany({
+      distinct: ["userId"],
+      where: {
+        problemId: +problemId,
+        isAccepted: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        createdAt: true,
+        User: {
+          select: {
+            id: true,
+            username: true,
+            fullname: true,
+            photoURL: true,
+          },
+        },
+      },
+    });
+    res.status(200).json({
+      data: solvedByList.map((user) => {
+        return {
+          ...user.User,
+          solvedAt: user.createdAt,
+        };
+      }),
+    });
   } catch (err) {
     console.log(err);
     res.status(404).json({ message: "somethings wrong" });
