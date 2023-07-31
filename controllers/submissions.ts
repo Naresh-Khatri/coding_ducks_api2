@@ -118,7 +118,25 @@ export const getSubmissionById = async (req: Request, res: Response) => {
     if (!submission)
       return res.status(404).json({ message: "submission not found" });
 
-    res.status(200).json({ data: submission, message: "success" });
+    // also get the next problem for submission modal
+    let nextProblem;
+    if (submission.Problem.frontendProblemId) {
+      nextProblem = await prisma.problem.findFirst({
+        where: {
+          frontendProblemId: submission.Problem.frontendProblemId + 1,
+        },
+        select: {
+          id: true,
+          title: true,
+          frontendProblemId: true,
+          slug: true,
+        },
+      });
+    }
+
+    res
+      .status(200)
+      .json({ data: { ...submission, nextProblem }, message: "success" });
   } catch (err) {
     console.log(err);
     res.status(404).json({ message: "somethings wrong" });
