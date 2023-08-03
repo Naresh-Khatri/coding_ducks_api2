@@ -143,6 +143,9 @@ model Submission {
   marks        Float
   isAccepted   Boolean @default(false)
 
+  memory  Int?
+  runtime Int?
+
   timestamp DateTime @default(now()) @db.Timestamp(6)
 
   Exam      Exam?   @relation(fields: [examId], references: [id])
