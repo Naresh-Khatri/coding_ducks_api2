@@ -96,6 +96,7 @@ model Problem {
   tags              ProblemTag[]
   submissions       Submission[]
   testCases         Json                 @db.Json
+  isActive          Boolean              @default(false)
 
   likes    User[]           @relation("ProblemLikes")
   dislikes User[]           @relation("ProblemDislikes")
