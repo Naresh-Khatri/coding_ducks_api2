@@ -4,6 +4,7 @@
   "description": "Backend for Coding Ducks",
   "main": "index.ts",
   "scripts": {
+    "build": "tsc",
     "dev": "nodemon"
   },
   "author": "",
