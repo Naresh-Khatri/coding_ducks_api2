@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { Prisma, PrismaClient } from "@prisma/client";
-import { IProblemWithSubmissions } from "../types";
+import { IProblemWithSubmissions, ITestCase } from "../types";
 import { create } from "domain";
 const prisma = new PrismaClient();
 
@@ -70,6 +70,16 @@ export const getProblemBySlug = async (req: Request, res: Response) => {
         starterCodes: true,
       },
     });
+
+    // remove hidden test cases
+    if (problem?.testCases) {
+      problem.testCases = JSON.parse(JSON.stringify(problem.testCases)).map(
+        (testCase: ITestCase) => {
+          if (testCase.isPublic) return testCase;
+          else return { isPublic: false };
+        }
+      );
+    }
 
     let status = "unsolved";
     // if we have req.user, then we can check if the user has solved the problem
@@ -243,6 +253,7 @@ export const getProblemsForProblemPage = async (
     const queryObj: Prisma.ProblemFindManyArgs = {
       where: {
         examId: null,
+        isActive: true,
       },
       select: {
         id: true,
