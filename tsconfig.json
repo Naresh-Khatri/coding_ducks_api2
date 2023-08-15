@@ -10,5 +10,6 @@
     "esModuleInterop": true,
     "allowJs": true,
     "typeRoots": ["./types"]
-  }
+  },
+  "exclude": ["node_modules", "dist"]
 }
