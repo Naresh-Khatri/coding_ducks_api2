@@ -2,7 +2,7 @@ import { Request, Response, Router } from "express";
 import { cpp, c, python, java, node } from "compile-run";
 import { PrismaClient } from "@prisma/client";
 import { checkIfAuthenticated } from "../middlewares/auth-middleware";
-import { ISubmissionResult, ITestCase, ITestCasesResult, Lang } from "../types";
+import { ISubmissionResult, ITestCase, Lang } from "../types";
 const prisma = new PrismaClient();
 
 const router = Router();
@@ -31,7 +31,11 @@ const evaluateResult = async (problemId: Number, code: string, lang: Lang) => {
         where: { id: +problemId },
       });
       if (!problem?.testCases) return reject({ message: "problem not found" });
+
+      // grab test cases
       const testCases = problem.testCases as unknown as ITestCase[];
+
+      // run code for each test case
       const results = await Promise.all(
         testCases.map(async (testCase) => {
           const { input, output } = testCase;
@@ -108,6 +112,8 @@ const saveInDB = async (result: any, req: Request) => {
         isAccepted: true,
       },
     });
+
+    // add points to user table
     if (previousAcceptedSubs === 0) {
       const problem = await prisma.problem.findUnique({
         where: {
@@ -119,7 +125,7 @@ const saveInDB = async (result: any, req: Request) => {
       });
       const diff = problem?.difficulty;
       const pointsToAdd =
-        diff === "tutorial"
+        diff === "tutorial" || diff === "veryEasy"
           ? 1
           : diff === "easy"
           ? 2
@@ -137,7 +143,8 @@ const saveInDB = async (result: any, req: Request) => {
         },
       });
     }
-    console.log("examId", req.body.examId);
+
+    // add submission to db
     const submission = await prisma.submission.create({
       data: {
         code: req.body.code,
@@ -174,6 +181,7 @@ const saveInDB = async (result: any, req: Request) => {
 
       result.tutorialProblemsSolved = subs.length;
     }
+
     resolve();
   });
 };
@@ -188,11 +196,36 @@ const verifyOutput = (expectedOutput: string, actualOutput: string) => {
 
 const runCode = async (code: string, lang: string, input: string) => {
   // console.log("input", input)
-  if (lang === "c") return c.runSource(code, { stdin: input });
-  if (lang === "cpp") return cpp.runSource(code, { stdin: input });
-  if (lang === "py") return python.runSource(code, { stdin: input });
-  if (lang === "java") return java.runSource(code, { stdin: input });
-  if (lang === "js") return node.runSource(code, { stdin: input });
+  if (lang === "c")
+    return c.runSource(code, {
+      stdin: input,
+      stderrLimit: 10000,
+      stdoutLimit: 10000,
+    });
+  if (lang === "cpp")
+    return cpp.runSource(code, {
+      stdin: input,
+      stderrLimit: 10000,
+      stdoutLimit: 10000,
+    });
+  if (lang === "py")
+    return python.runSource(code, {
+      stdin: input,
+      stderrLimit: 10000,
+      stdoutLimit: 10000,
+    });
+  if (lang === "java")
+    return java.runSource(code, {
+      stdin: input,
+      stderrLimit: 10000,
+      stdoutLimit: 10000,
+    });
+  if (lang === "js")
+    return node.runSource(code, {
+      stdin: input,
+      stderrLimit: 10000,
+      stdoutLimit: 10000,
+    });
   return python.runSource(code, { stdin: input });
 };
 
