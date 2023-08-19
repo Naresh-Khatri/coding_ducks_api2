@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
     "sourceMap": true,
-    "target": "ES2015",
+    "target": "ES2017",
     "outDir": "dist",
     "moduleResolution": "node",
     "module": "CommonJS",
     "strict": true,
-    "lib": ["esnext"],
+    "lib": ["ES2021.Promise", "ES2021.String", "DOM"],
     "esModuleInterop": true,
     "allowJs": true,
     "typeRoots": ["./types"]
