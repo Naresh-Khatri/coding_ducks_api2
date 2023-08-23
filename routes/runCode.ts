@@ -1,8 +1,8 @@
 import { Request, Response, Router } from "express";
-import { cpp, c, python, java, node } from "compile-run";
 import { PrismaClient } from "@prisma/client";
 import { checkIfAuthenticated } from "../middlewares/auth-middleware";
-import { ISubmissionResult, ITestCase, Lang } from "../types";
+import { ITestCase, Lang } from "../types";
+import { execCode } from "../turbodrive";
 const prisma = new PrismaClient();
 
 const router = Router();
@@ -35,55 +35,51 @@ const evaluateResult = async (problemId: Number, code: string, lang: Lang) => {
       // grab test cases
       const testCases = problem.testCases as unknown as ITestCase[];
 
-      // run code for each test case
-      const results = await Promise.all(
-        testCases.map(async (testCase) => {
-          const { input, output } = testCase;
-          // add \n at the end to avoid \r
-          const result = await runCode(
-            code,
-            lang,
-            input.replaceAll("\\n", "\n") + "\n"
-          );
-          const { stderr, errorType } = result;
-          if (stderr) {
-            const errorIndex = getErrorIndex(stderr, lang);
-            return {
-              errorOccurred: true,
-              errorMessage: stderr,
-              errorType,
-              errorIndex,
-            };
-          }
-          if (testCase.isPublic)
-            return {
-              input,
-              output,
-              actualOutput: result.stdout,
-              result,
-              isPublic: true,
-              isCorrect: verifyOutput(output, result.stdout),
-            };
-          else
-            return {
-              result,
-              isPublic: false,
-              isCorrect: verifyOutput(output, result.stdout),
-            };
-        })
-      );
-      const isCorrect = results.every((result) => result.isCorrect);
-      const passedCount = results.reduce(
-        (acc, res) => acc + (res.isCorrect ? 1 : 0),
-        0
-      );
-      const totalCount = results.length;
+      const results = await execCode({
+        lang,
+        code,
+        inputs: testCases.map((t) => t.input),
+        options: { maxBuffer: 1024 * 1024, timeout: 3000 },
+      });
+
+      if (results.results && results.results?.length > 0) {
+        results.results = results.results?.map((r, idx) => {
+          return {
+            isCorrect: verifyOutput(r.stdout, testCases[idx].output),
+            exitCode: r.exitCode,
+            expectedOutput: testCases[idx].output,
+            output: r.stderr || r.stdout,
+            stdout: r.stdout,
+            stderr: r.stderr,
+            signal: r.signal,
+            memoryUsage: r.memoryUsage,
+            errorType: r.errorType,
+            errorIndex: getErrorIndex(r.stderr || "", lang),
+            runtime: r.runtime,
+            isPublic: testCases[idx].isPublic,
+            stdin: testCases[idx].isPublic ? r.stdin : null,
+          };
+        });
+      }
+
+      const totalCount = results.results?.length;
+      const passedCount =
+        results.results &&
+        results.results.reduce(
+          (acc, res, idx) =>
+            acc + (verifyOutput(res.stdout, testCases[idx].output) ? 1 : 0),
+          0
+        );
+      const isCorrect = passedCount === totalCount;
+
       resolve({
-        results,
+        results: results.results,
+        errorCount: results.errorsCount,
         passedCount,
         totalCount,
+        totalRuntime: results.totalRuntime,
         isCorrect,
-      } as ISubmissionResult);
+      });
     } catch (err) {
       console.log(err);
       reject({ message: "somethings wrong" });
@@ -98,7 +94,7 @@ const getErrorIndex = (stderr: string, lang: Lang) => {
     const line = Number.parseInt(text.split(" ")[1]);
     return line;
   }
-  return 0;
+  return null;
 };
 
 // this also adds subId to result
@@ -192,41 +188,6 @@ const verifyOutput = (expectedOutput: string, actualOutput: string) => {
     expectedOutput?.trim().replaceAll(/\t|\n|\r| /g, "") ===
     actualOutput?.trim().replaceAll(/\t|\n|\r| /g, "")
   );
-};
-
-const runCode = async (code: string, lang: string, input: string) => {
-  // console.log("input", input)
-  if (lang === "c")
-    return c.runSource(code, {
-      stdin: input,
-      stderrLimit: 10000,
-      stdoutLimit: 10000,
-    });
-  if (lang === "cpp")
-    return cpp.runSource(code, {
-      stdin: input,
-      stderrLimit: 10000,
-      stdoutLimit: 10000,
-    });
-  if (lang === "py")
-    return python.runSource(code, {
-      stdin: input,
-      stderrLimit: 10000,
-      stdoutLimit: 10000,
-    });
-  if (lang === "java")
-    return java.runSource(code, {
-      stdin: input,
-      stderrLimit: 10000,
-      stdoutLimit: 10000,
-    });
-  if (lang === "js")
-    return node.runSource(code, {
-      stdin: input,
-      stderrLimit: 10000,
-      stdoutLimit: 10000,
-    });
-  return python.runSource(code, { stdin: input });
 };
 
 export default router;
