@@ -1,8 +1,8 @@
 import { Server, Socket } from "socket.io";
 import { PrismaClient } from "@prisma/client";
+import { execCode } from "../turbodrive";
+// import { execCodeWithSingleInput } from "../turbodrive";
 const prisma = new PrismaClient();
-
-import { runCode } from "../routes/playground";
 
 interface message {
   userId: number;
@@ -211,7 +211,13 @@ export const setupSocketIO = (io: Server) => {
     socket.on("code-exec", async (payload) => {
       // console.log("run-code", payload);
       io.to(payload.roomInfo.name).emit("code-exec-started", payload);
-      const res = await runCode(payload.code, payload.lang, "");
+      const res = await execCode({
+        lang: payload.lang,
+        code: payload.code,
+        inputs: [payload.input || ""],
+        options: { maxBuffer: 1024 * 1024, timeout: 3000 },
+      });
+
       // console.log(res);
       io.to(payload.roomInfo.name).emit("code-exec-finished", {
         ...payload,
