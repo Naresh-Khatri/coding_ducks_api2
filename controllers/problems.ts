@@ -338,7 +338,35 @@ export const getExamProblems = async (req: Request, res: Response) => {
       orderBy: {
         order: "asc",
       },
+
+      // --------- shameless logic copy paste ----------------
+      include: {
+        tags: true,
+        submissions: {
+          where: {
+            userId: req.user?.userId,
+          },
+        },
+        starterCodes: true,
+      },
     });
+
+    // remove hidden test cases
+    if (problemsList[0]?.testCases) {
+      problemsList.forEach(
+        (problem) =>
+          (problem.testCases = JSON.parse(
+            JSON.stringify(problem.testCases)
+          ).map((testCase: ITestCase) => {
+            if (testCase.isPublic) return testCase;
+            else return { isPublic: false };
+          }))
+      );
+    }
+
+    if (!problemsList)
+      return res.status(404).json({ message: "problem not found" });
+      // -----------------------------------------------------------
     res.status(200).json(problemsList);
   } catch (err) {
     console.log(err);
