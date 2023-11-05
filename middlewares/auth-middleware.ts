@@ -1,4 +1,4 @@
-import prisma from "../lib/prisma.js";
+import prisma from "../lib/prisma";
 import { NextFunction, Response, Request } from "express";
 // import { RequestWithUserAndFile } from "../custom_types/request.js";
 import admin from "../firebase/firebase_service.js";
