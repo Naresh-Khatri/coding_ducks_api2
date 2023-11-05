@@ -70,7 +70,27 @@ export const execCode = async ({
           sourcePath = dirPath;
           compResult = await compileCpp(dirPath);
         }
-        if (compResult?.compileErr) return resolve(compResult);
+        if (compResult?.compileErr) {
+          //TODO: this is a temporary hack for codemacha3.0
+          console.log(Object.entries(compResult));
+          const res: ICompilationResult = compResult;
+          return resolve({
+            total: inputs.length,
+            errorsCount: inputs.length,
+            compileErr: { name: "", message: "" },
+            compileStderr: compResult.compileStderr,
+            compileStdout: compResult.compileStderr,
+            compileSuccess: false,
+            compileTime: 0,
+            results: inputs.map((input) => {
+              return {
+                errorType: "compile-time",
+                stdout: res.compileStderr,
+                exitCode: 1,
+              };
+            }),
+          });
+        }
         const promises = inputs.map(
           async (input) =>
             await execute({ lang, dirPath: sourcePath, input, options })
