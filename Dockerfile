@@ -17,6 +17,7 @@ RUN ["npm", "install"]
 COPY . .
 RUN npx prisma generate
 RUN npm run build
+RUN ["mkdir", "-p", "/app/dist/turbodrive/.tmp"]
 
 EXPOSE 3333/tcp
 
