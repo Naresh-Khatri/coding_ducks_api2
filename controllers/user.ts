@@ -1,10 +1,9 @@
 import { Request, Response } from "express";
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import prisma from "../lib/prisma";
 import fileUpload from "express-fileupload";
 import imageKit from "../imagekit/config";
 import { ILeague } from "../types";
-
-const prisma = new PrismaClient();
 
 export const getUsers = async (req: Request, res: Response) => {
   try {
@@ -296,8 +295,6 @@ export const getUserStats = async (req: Request, res: Response) => {
 
     // ----------------- STREAK -----------------
     const subsCountByDate = allSubmissions.reduce((agg: any, currSub: any) => {
-      if (currSub.examId) return agg;
-
       const date = currSub.timestamp.toISOString().split("T")[0];
 
       if (agg.length === 0) {
@@ -308,8 +305,6 @@ export const getUserStats = async (req: Request, res: Response) => {
       else agg.push({ date, count: 1 });
       return agg;
     }, [] as { date: string; count: number }[]);
-    // console.log(subsCountByDate);
-
     interface IDateCount {
       date: string;
       count: number;
@@ -357,6 +352,7 @@ export const getUserStats = async (req: Request, res: Response) => {
       return { streakActive, streaks, longestStreak };
     }
 
+    // console.log(allSubmissions)
     const { streaks, longestStreak, streakActive } =
       calculateStreaks(subsCountByDate);
 

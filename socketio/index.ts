@@ -1,8 +1,7 @@
 import { Server, Socket } from "socket.io";
-import { PrismaClient } from "@prisma/client";
 import { execCode } from "../turbodrive";
+import prisma from "../lib/prisma";
 // import { execCodeWithSingleInput } from "../turbodrive";
-const prisma = new PrismaClient();
 
 interface message {
   userId: number;

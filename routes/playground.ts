@@ -1,10 +1,9 @@
 import { Request, Response, Router } from "express";
 import { checkIfAuthenticated } from "../middlewares/auth-middleware";
 
-import { PrismaClient } from "@prisma/client";
 import { Lang } from "../types";
 import { execCode } from "../turbodrive";
-const prisma = new PrismaClient();
+import prisma from "../lib/prisma";
 
 const router = Router();
 
@@ -23,7 +22,7 @@ router.post(
         lang,
         code,
         inputs,
-        options: { maxBuffer: 1024 * 1024, timeout:3000 },
+        options: { maxBuffer: 1024 * 1024, timeout: 3000 },
       });
       res.json({
         ...result,

@@ -1,49 +1,48 @@
-import { Request, Response } from 'express'
-import imageKit from '../imagekit/config'
-import { PrismaClient } from '@prisma/client'
-import fileUpload from 'express-fileupload'
-const prisma = new PrismaClient()
+import { Request, Response } from "express";
+import imageKit from "../imagekit/config";
+import fileUpload from "express-fileupload";
+import prisma from "../lib/prisma";
 
 export const getAllExercises = async (req: Request, res: Response) => {
   try {
-    const exercises = await prisma.exercise.findMany({})
-    res.status(200).json(exercises)
-
+    const exercises = await prisma.exercise.findMany({});
+    res.status(200).json(exercises);
   } catch (err) {
-    console.log(err)
-    res.status(404).json({ message: 'somethings wrong' })
+    console.log(err);
+    res.status(404).json({ message: "somethings wrong" });
   }
-}
+};
 
 export const createExercise = async (req: Request, res: Response) => {
-  console.log(req.body)
-  console.log(req.files)
+  console.log(req.body);
+  console.log(req.files);
   if (!req.files || Object.keys(req.files).length === 0)
-    return res.status(404).json({ message: 'cover image not uploaded' })
+    return res.status(404).json({ message: "cover image not uploaded" });
 
-  const coverImg = req.files.coverImg as fileUpload.UploadedFile
+  const coverImg = req.files.coverImg as fileUpload.UploadedFile;
 
   try {
     const result = await imageKit.upload({
       file: coverImg.data,
       fileName: "exercise cover image -" + req.body.title,
       folder: "/coding_ducks/exercises",
-      extensions: [{ name: "google-auto-tagging", maxTags: 5, minConfidence: 95, },
+      extensions: [
+        { name: "google-auto-tagging", maxTags: 5, minConfidence: 95 },
       ],
     });
-    console.log(result)
+    console.log(result);
     const newExercise = await prisma.exercise.create({
       data: {
-        ...req.body, coverImg: result.url
-      }
-    })
-    res.status(200).json(newExercise)
-
+        ...req.body,
+        coverImg: result.url,
+      },
+    });
+    res.status(200).json(newExercise);
   } catch (err) {
-    console.log(err)
-    res.status(404).json({ message: 'somethings wrong' })
+    console.log(err);
+    res.status(404).json({ message: "somethings wrong" });
   }
-}
+};
 // export const getExamUsingId = async (req: Request, res: Response) => {
 //   try {
 //     const exam = await prisma.exam.findUnique({
@@ -73,7 +72,6 @@ export const createExercise = async (req: Request, res: Response) => {
 //     res.status(404).json({ message: 'somethings wrong' })
 //   }
 // }
-
 
 // export const updateExam = async (req: Request, res: Response) => {
 //   if (req.files) {

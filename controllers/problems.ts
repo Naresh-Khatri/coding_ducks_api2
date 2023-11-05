@@ -1,8 +1,7 @@
 import { Request, Response } from "express";
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { IProblemWithSubmissions, ITestCase } from "../types";
-import { create } from "domain";
-const prisma = new PrismaClient();
+import prisma from "../lib/prisma";
 
 export const getAllProblems = async (req: Request, res: Response) => {
   try {
@@ -12,7 +11,6 @@ export const getAllProblems = async (req: Request, res: Response) => {
         examId: null,
       },
       orderBy: [{ frontendProblemId: "desc" }],
-
       include: {
         tags: true,
         starterCodes: true,
@@ -30,7 +28,7 @@ export const getAllProblems = async (req: Request, res: Response) => {
         examId: undefined,
       };
       q.orderBy = [
-        { examId: "desc" },
+        { id: "desc" },
         { order: "desc" },
         { frontendProblemId: "desc" },
       ];

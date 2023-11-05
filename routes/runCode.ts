@@ -1,9 +1,8 @@
 import { Request, Response, Router } from "express";
-import { PrismaClient } from "@prisma/client";
 import { checkIfAuthenticated } from "../middlewares/auth-middleware";
 import { ITestCase, Lang } from "../types";
 import { execCode } from "../turbodrive";
-const prisma = new PrismaClient();
+import prisma from "../lib/prisma";
 
 const router = Router();
 

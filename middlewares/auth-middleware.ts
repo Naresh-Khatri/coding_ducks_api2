@@ -1,5 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+import prisma from "../lib/prisma.js";
 import { NextFunction, Response, Request } from "express";
 // import { RequestWithUserAndFile } from "../custom_types/request.js";
 import admin from "../firebase/firebase_service.js";

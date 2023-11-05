@@ -1,8 +1,7 @@
 import { Request, Response } from "express";
 import imageKit from "../imagekit/config";
-import { PrismaClient } from "@prisma/client";
 import fileUpload from "express-fileupload";
-const prisma = new PrismaClient();
+import prisma from "../lib/prisma";
 
 export const getAllExams = async (req: Request, res: Response) => {
   try {
