@@ -4,8 +4,9 @@
   "description": "Backend for Coding Ducks",
   "main": "index.ts",
   "scripts": {
-    "build": "tsc",
-    "dev": "nodemon",
+    "start": "NODE_PATH=./dist node dist/index.js",
+    "build": "tsc -p .",
+    "dev": "nodemon index.ts",
     "test": "vitest --ui"
   },
   "author": "",
@@ -25,7 +26,6 @@
     "pg": "^8.7.3",
     "redis": "^4.6.5",
     "socket.io": "^4.6.1",
-    "ts-node": "^10.9.1",
     "vitest": "^0.34.5"
   },
   "devDependencies": {
@@ -37,6 +37,7 @@
     "@vitest/ui": "^0.34.5",
     "nodemon": "^2.0.20",
     "prisma": "4.3.1",
+    "ts-node": "^10.9.2",
     "typescript": "^5.0.4"
   }
 }
