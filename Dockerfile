@@ -1,5 +1,4 @@
-FROM node:18
-
+FROM node:18 as base
 
 RUN apt-get update && apt-get install -y \
     unzip \
@@ -10,15 +9,20 @@ RUN apt-get update && apt-get install -y \
     libc-dev \
     openjdk-17-jdk  
 
-WORKDIR /app
+WORKDIR /home/node/app
 
 COPY package*.json ./
-RUN ["npm", "install"]
-COPY . .
+COPY yarn.lock ./
+
+RUN yarn install
 RUN npx prisma generate
-RUN npm run build
-RUN ["mkdir", "-p", "/app/dist/turbodrive/.tmp"]
+RUN mkdir -p /app/dist/turbodrive/.tmp
 
-EXPOSE 3333/tcp
+COPY . .
 
-CMD [ "node", "dist/index.js" ]
+
+FROM base as production
+
+ENV NODE_PATH=./dist
+
+RUN yarn build
