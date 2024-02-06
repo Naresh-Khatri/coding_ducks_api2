@@ -1,11 +1,11 @@
 {
   "compilerOptions": {
     "sourceMap": true,
-    "baseUrl": "./",
-    "target": "ESNext",
+    "target": "ES2017",
     "outDir": "dist",
     "moduleResolution": "node",
     "module": "CommonJS",
+    "skipLibCheck": true,
     "strict": true,
     "lib": ["ES2021.Promise", "ES2021.String", "DOM"],
     "esModuleInterop": true,
