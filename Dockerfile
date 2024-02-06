@@ -9,14 +9,15 @@ RUN apt-get update && apt-get install -y \
     libc-dev \
     openjdk-17-jdk  
 
-WORKDIR /home/node/app
+WORKDIR /app
 
 COPY package*.json ./
 COPY yarn.lock ./
 
-RUN yarn install
+RUN yarn
 RUN npx prisma generate
-RUN mkdir -p /app/dist/turbodrive/.tmp
+RUN mkdir -p ./turbodrive/.tmp
+RUN mkdir -p ./dist/turbodrive/.tmp
 
 COPY . .
 

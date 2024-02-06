@@ -4,4 +4,4 @@ services:
   app:
     build:
       target: production
-    command: node dist/index.js
+    command: node /app/dist/index.js

@@ -7,8 +7,8 @@ services:
       dockerfile: Dockerfile
       target: base
     volumes:
-      - ./:/home/node/app
-      - ./nodemon.json:/home/node/app/nodemon.json
+      - ./:/app
+      - ./nodemon.json:/app/nodemon.json
     container_name: codingducks-backend
     expose:
       - "3333"
