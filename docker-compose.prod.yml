@@ -3,5 +3,8 @@ version: '3.7'
 services:
   app:
     build:
+      context: .
       target: production
-    command: node /app/dist/index.js
+
+    ports:
+      - 3333:3333
