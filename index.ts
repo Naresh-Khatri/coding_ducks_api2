@@ -14,7 +14,7 @@ import submissionsRoute from "./routes/submissions";
 import allowCORS from "./middlewares/allow-cors";
 import { setupSocketIO } from "./socketio";
 
-const PORT = process.env.PORT || 3333;
+const PORT = Number(process.env.PORT || 3333);
 
 const app = express();
 
@@ -37,6 +37,6 @@ app.use("/problems", problemsRoute);
 app.use("/playground", playgroundRoute);
 app.use("/submissions", submissionsRoute);
 
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, "0.0.0.0", () => {
   console.log(`Server up on http://localhost:${PORT}`);
 });
