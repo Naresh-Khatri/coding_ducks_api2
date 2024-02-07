@@ -11,19 +11,30 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-COPY package*.json ./
-COPY yarn.lock ./
+COPY package*.json .
+COPY yarn.lock .
 
 RUN yarn
-RUN npx prisma generate
-RUN mkdir -p ./turbodrive/.tmp
-RUN mkdir -p ./dist/turbodrive/.tmp
 
 COPY . .
-
-
-FROM base as production
-
-ENV NODE_PATH=./dist
+RUN npx prisma generate && \
+    mkdir -p dist/turbodrive/.tmp && \
+    mkdir -p turbodrive/.tmp
 
 RUN yarn build
+
+
+FROM node:18 as production
+
+ENV NODE_ENV=production
+
+WORKDIR /app
+
+COPY package*.json .
+COPY yarn.lock .
+
+RUN yarn install --frozen-lockfile --production
+
+COPY --from=base /app/dist ./dist
+
+CMD [ "node", "dist/index.js" ]
