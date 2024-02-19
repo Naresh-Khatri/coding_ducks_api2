@@ -48,21 +48,33 @@ model User {
   Room     Room[]
   Feedback Feedback[]
 
-  createdAt DateTime @default(now()) @db.Timestamp(6)
-  updatedAt DateTime @updatedAt @db.Timestamp(6)
+  createdAt DateTime      @default(now()) @db.Timestamp(6)
+  updatedAt DateTime      @updatedAt @db.Timestamp(6)
+  FileDelta FileHistory[]
 }
 
 model File {
-  id        Int      @id @default(autoincrement())
-  owner     User     @relation(fields: [ownerId], references: [id])
+  id        Int           @id @default(autoincrement())
+  owner     User          @relation(fields: [ownerId], references: [id])
   ownerId   Int
-  room      Room     @relation(fields: [roomId], references: [id])
+  room      Room          @relation(fields: [roomId], references: [id])
   roomId    Int
   fileName  String
-  code      String   @default("")
+  code      String        @default("")
   lang      LANG
+  createdAt DateTime      @default(now()) @db.Timestamp(6)
+  updatedAt DateTime      @updatedAt @db.Timestamp(6)
+  FileDelta FileHistory[]
+}
+
+model FileHistory {
+  id        Int      @id @default(autoincrement())
+  file      File     @relation(fields: [fileId], references: [id])
+  fileId    Int
   createdAt DateTime @default(now()) @db.Timestamp(6)
-  updatedAt DateTime @updatedAt @db.Timestamp(6)
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  Int
+  content   String
 }
 
 model Exam {
