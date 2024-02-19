@@ -51,30 +51,48 @@ model User {
   createdAt DateTime      @default(now()) @db.Timestamp(6)
   updatedAt DateTime      @updatedAt @db.Timestamp(6)
   FileDelta FileHistory[]
+  Directory Directory[]
+}
+
+model Directory {
+  id          Int           @id @default(autoincrement())
+  owner       User          @relation(fields: [ownerId], references: [id])
+  ownerId     Int
+  room        Room          @relation(fields: [roomId], references: [id])
+  roomId      Int
+  name        String        @default("New Folder")
+  createdAt   DateTime      @default(now()) @db.Timestamp(6)
+  updatedAt   DateTime      @updatedAt @db.Timestamp(6)
+  File        File[]
+  FileHistory FileHistory[]
 }
 
 model File {
-  id        Int           @id @default(autoincrement())
-  owner     User          @relation(fields: [ownerId], references: [id])
-  ownerId   Int
-  room      Room          @relation(fields: [roomId], references: [id])
-  roomId    Int
-  fileName  String
-  code      String        @default("")
-  lang      LANG
-  createdAt DateTime      @default(now()) @db.Timestamp(6)
-  updatedAt DateTime      @updatedAt @db.Timestamp(6)
-  FileDelta FileHistory[]
+  id          Int           @id @default(autoincrement())
+  owner       User          @relation(fields: [ownerId], references: [id])
+  ownerId     Int
+  room        Room          @relation(fields: [roomId], references: [id])
+  roomId      Int
+  fileName    String
+  code        String        @default("")
+  lang        LANG
+  directory   Directory?    @relation(fields: [directoryId], references: [id])
+  directoryId Int
+  createdAt   DateTime      @default(now()) @db.Timestamp(6)
+  updatedAt   DateTime      @updatedAt @db.Timestamp(6)
+  FileDelta   FileHistory[]
 }
 
 model FileHistory {
-  id        Int      @id @default(autoincrement())
-  file      File     @relation(fields: [fileId], references: [id])
-  fileId    Int
-  createdAt DateTime @default(now()) @db.Timestamp(6)
-  author    User     @relation(fields: [authorId], references: [id])
-  authorId  Int
-  content   String
+  id          Int        @id @default(autoincrement())
+  file        File       @relation(fields: [fileId], references: [id])
+  fileId      Int
+  createdAt   DateTime   @default(now()) @db.Timestamp(6)
+  author      User       @relation(fields: [authorId], references: [id])
+  authorId    Int
+  content     String
+  Directory   Directory? @relation(fields: [directoryId], references: [id])
+  directoryId Int?
 }
 
 model Exam {
@@ -213,9 +231,10 @@ model Room {
   created_at DateTime  @default(now()) @db.Timestamp(6)
   message    Message[]
 
-  createdAt DateTime @default(now()) @db.Timestamp(6)
-  updatedAt DateTime @updatedAt @db.Timestamp(6)
+  createdAt DateTime    @default(now()) @db.Timestamp(6)
+  updatedAt DateTime    @updatedAt @db.Timestamp(6)
   File      File[]
+  Directory Directory[]
 }
 
 // TODO: normalize this shit
