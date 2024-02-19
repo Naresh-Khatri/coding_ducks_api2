@@ -7,6 +7,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum LANG {
+  py
+  js
+  java
+  cpp
+  c
+}
+
 model User {
   id           Int       @id @default(autoincrement())
   fullname     String    @db.VarChar(100)
@@ -45,13 +53,16 @@ model User {
 }
 
 model File {
-  id           Int       @id @default(autoincrement())
-  user         User      @relation(fields: [userId], references: [id])
-  userId       Int
-  fileName     String
-  code         String    @default("")
-  lang         String
-  lastModified DateTime? @db.Timestamp(6)
+  id        Int      @id @default(autoincrement())
+  owner     User     @relation(fields: [ownerId], references: [id])
+  ownerId   Int
+  room      Room     @relation(fields: [roomId], references: [id])
+  roomId    Int
+  fileName  String
+  code      String   @default("")
+  lang      LANG
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  updatedAt DateTime @updatedAt @db.Timestamp(6)
 }
 
 model Exam {
@@ -188,12 +199,14 @@ model Room {
   owner      User      @relation(fields: [ownerId], references: [id])
   ownerId    Int
   created_at DateTime  @default(now()) @db.Timestamp(6)
-  messages   Message[]
+  message    Message[]
 
   createdAt DateTime @default(now()) @db.Timestamp(6)
   updatedAt DateTime @updatedAt @db.Timestamp(6)
+  File      File[]
 }
 
+// TODO: normalize this shit
 model Message {
   id       Int      @id @default(autoincrement())
   username String
