@@ -13,6 +13,7 @@ enum LANG {
   java
   cpp
   c
+  other
 }
 
 model User {
@@ -82,7 +83,7 @@ model File {
   code        String        @default("")
   lang        LANG
   parentDir   Directory?    @relation(fields: [parentDirId], references: [id])
-  parentDirId Int
+  parentDirId Int?
   createdAt   DateTime      @default(now()) @db.Timestamp(6)
   updatedAt   DateTime      @updatedAt @db.Timestamp(6)
   FileDelta   FileHistory[]
