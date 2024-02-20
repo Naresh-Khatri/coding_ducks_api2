@@ -55,14 +55,19 @@ model User {
 }
 
 model Directory {
-  id          Int           @id @default(autoincrement())
-  owner       User          @relation(fields: [ownerId], references: [id])
-  ownerId     Int
-  room        Room          @relation(fields: [roomId], references: [id])
-  roomId      Int
-  name        String        @default("New Folder")
-  createdAt   DateTime      @default(now()) @db.Timestamp(6)
-  updatedAt   DateTime      @updatedAt @db.Timestamp(6)
+  id        Int      @id @default(autoincrement())
+  owner     User     @relation(fields: [ownerId], references: [id])
+  ownerId   Int
+  room      Room     @relation(fields: [roomId], references: [id])
+  roomId    Int
+  name      String   @default("New Folder")
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  updatedAt DateTime @updatedAt @db.Timestamp(6)
+
+  parentDir   Directory?  @relation("childDirs", fields: [parentDirId], references: [id])
+  parentDirId Int?
+  childDir    Directory[] @relation("childDirs")
+
   File        File[]
   FileHistory FileHistory[]
 }
@@ -76,8 +81,8 @@ model File {
   fileName    String
   code        String        @default("")
   lang        LANG
-  directory   Directory?    @relation(fields: [directoryId], references: [id])
-  directoryId Int
+  parentDir   Directory?    @relation(fields: [parentDirId], references: [id])
+  parentDirId Int
   createdAt   DateTime      @default(now()) @db.Timestamp(6)
   updatedAt   DateTime      @updatedAt @db.Timestamp(6)
   FileDelta   FileHistory[]
