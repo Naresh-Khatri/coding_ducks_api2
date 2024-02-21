@@ -45,14 +45,14 @@ model User {
   upvotedComments   ProblemComment[] @relation("CommentUpvotes")
   downvotedComments ProblemComment[] @relation("CommentDownvotes")
 
-  messages Message[]
-  Room     Room[]
-  Feedback Feedback[]
+  messages  Message[]
+  rooms     Room[]
+  Feedbacks Feedback[]
 
-  createdAt DateTime      @default(now()) @db.Timestamp(6)
-  updatedAt DateTime      @updatedAt @db.Timestamp(6)
-  FileDelta FileHistory[]
-  Directory Directory[]
+  createdAt   DateTime      @default(now()) @db.Timestamp(6)
+  updatedAt   DateTime      @updatedAt @db.Timestamp(6)
+  fileDeltas  FileHistory[]
+  Directories Directory[]
 }
 
 model Directory {
@@ -67,10 +67,12 @@ model Directory {
 
   parentDir   Directory?  @relation("childDirs", fields: [parentDirId], references: [id])
   parentDirId Int?
-  childDir    Directory[] @relation("childDirs")
+  childDirs   Directory[] @relation("childDirs")
+  isArchived  Boolean     @default(false)
+  isDeletable Boolean     @default(false)
 
-  File        File[]
-  FileHistory FileHistory[]
+  files         File[]
+  fileHistories FileHistory[]
 }
 
 model File {
@@ -84,9 +86,11 @@ model File {
   lang        LANG
   parentDir   Directory?    @relation(fields: [parentDirId], references: [id])
   parentDirId Int?
+  isArchived  Boolean       @default(false)
+  isDeletable Boolean       @default(false)
   createdAt   DateTime      @default(now()) @db.Timestamp(6)
   updatedAt   DateTime      @updatedAt @db.Timestamp(6)
-  FileDelta   FileHistory[]
+  fileDeltas  FileHistory[]
 }
 
 model FileHistory {
