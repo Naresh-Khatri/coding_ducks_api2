@@ -1,16 +1,18 @@
 import { Server } from "socket.io";
 import { execCode } from "../turbodrive";
-import prisma from "../lib/prisma";
-import { User } from "@prisma/client";
+import prisma, { getRecursiveInclude } from "../lib/prisma";
 import RoomsStateManager from "./state-manager";
 import {
   CODE_EXEC_END,
   CODE_EXEC_START,
+  CODE_SAVE,
   CODE_UPDATE,
   CODE_UPDATED,
   CURSOR_UPDATE,
   CURSOR_UPDATED,
   DISCONNECT,
+  FILE_GET,
+  ISocketUser,
   LANG_UPDATE,
   LANG_UPDATED,
   LOBBY_UPDATED,
@@ -20,6 +22,7 @@ import {
   ROOM_CREATED,
   ROOM_CREATE_FAILED,
   ROOM_CREATE_SUCCESS,
+  ROOM_GET,
   SERVER_INFO_RECEIVE,
   USER_CONNECTED,
   USER_DATA_SEND,
@@ -33,7 +36,12 @@ import {
   USER_LOST,
 } from "./events";
 import {
+  CodeSave,
+  CodeUpdate,
+  CodeUpdated,
   CommonFailed,
+  CursorUpdate,
+  CursorUpdated,
   IMessage,
   LobbyUpdated,
   MessageReceive,
@@ -53,40 +61,38 @@ import {
   UserLost,
 } from "./events-types";
 
-interface message {
-  userId: number;
-  username: string;
-  text: string;
-  timestamp?: string;
-  roomId: number;
-  photoURL: string;
-}
-
-interface Cursor {
-  userId: number;
-  roomId: number;
-  row: number;
-  col: number;
-}
-
 export const setupSocketIO = async (io: Server) => {
   // get rooms list from db and create a rooms list which would contains clients
   const dbRooms = await prisma.room.findMany({ include: { owner: true } });
   const state = RoomsStateManager({ initialRooms: dbRooms });
 
-  const cursors = new Map<string, Cursor>();
-
   io.on("connection", (socket) => {
+    // ----------------- FILES -----------------
+    socket.on(FILE_GET, async (payload, cb) => {
+      const file = await state.getFile(payload.fileId);
+      cb(file);
+    });
+
+    // extras after adding Yjs
+    socket.on(ROOM_GET, async ({ roomName }: { roomName: string }, cb) => {
+      console.log(roomName)
+      const room = await prisma.room.findFirst({
+        where: { name: roomName },
+      });
+      cb({ status: "success", data: room });
+    });
+
     // socket sends their user
     socket.on(USER_DATA_SEND, async ({ user }: UserDataSend) => {
       // add user to state
-      await state.connectClient({
+      const newClient = await state.connectClient({
         socketId: socket.id,
         user: { id: user.id, socketId: socket.id },
       });
       // send updated state to socket
       socket.emit(SERVER_INFO_RECEIVE, {
         clients: state.getConnectedClients(),
+
         rooms: state.getrooms(),
       } as ServerInfoReceive);
       // notify all about user connected
@@ -96,23 +102,22 @@ export const setupSocketIO = async (io: Server) => {
     });
 
     socket.on(DISCONNECT, async (...args) => {
-      const disconnectClient = await state.disconnectClient(socket.id);
-      console.log("user disconnected: ", disconnectClient);
-      // emit to every socket
-      io.emit(USER_DISCONNECTED, {
-        clients: state.getConnectedClients(),
-      } as UserDisconnected);
-      // if user was in a room then emit in room
-      if (disconnectClient.room?.name) {
-        io.to(disconnectClient.room.name).emit(USER_LOST, {
-          room: disconnectClient.room,
-          user: disconnectClient,
+      const disconnectedClient = state.disconnectClient(socket.id);
+      // if user was in a room
+      if (disconnectedClient.room?.name) {
+        // remove their cursor
+        state.removeCursor(disconnectedClient.id || 0);
+        // emit in room
+        io.to(disconnectedClient.room.name).emit(USER_LOST, {
+          room: disconnectedClient.room,
+          user: disconnectedClient,
+          cursors: state.getCursorsInRoom(disconnectedClient.room.id),
         } as UserLost);
         //update lobby (just pass ids for filtering)
         socket.broadcast.emit(LOBBY_UPDATED, {
           type: "remove-user-from-room",
-          room: disconnectClient.room,
-          user: disconnectClient,
+          room: disconnectedClient.room,
+          user: disconnectedClient,
         });
       }
     });
@@ -130,6 +135,7 @@ export const setupSocketIO = async (io: Server) => {
           username: true,
         },
       });
+
       //if user doesnt exist, send error
       if (!dbUser) {
         socket.emit(USER_JOIN_FAILED, {
@@ -138,6 +144,7 @@ export const setupSocketIO = async (io: Server) => {
         } as CommonFailed);
         return;
       }
+
       // check if roomname exists
       if (!state.getroom({ roomName: room.name })) {
         socket.emit(USER_JOIN_FAILED, {
@@ -170,6 +177,34 @@ export const setupSocketIO = async (io: Server) => {
       // add room if not localy present in map
       state.joinRoom({ roomId: dbRoom.id, socketId: socket.id, user: dbUser });
 
+      // add their cursor
+      state.addCursor({
+        user: dbUser,
+        room: { id: dbRoom.id, name: dbRoom.name },
+      });
+
+      // generate a filesystem
+      // since prisma doesnt support recursive queries for self relations
+      // im forced to use this helper function
+      const dirs = await prisma.directory.findMany({
+        where: { roomId: dbRoom.id, parentDir: null },
+        include: getRecursiveInclude({
+          depth: 6,
+          obj: {
+            files: {
+              select: {
+                id: true,
+                fileName: true,
+                parentDirId: true,
+                lang: true,
+                // isDeletable: true,
+                // isArchived: true,
+              },
+            },
+          },
+        }),
+      });
+
       // get room messages
       const msgsList = await prisma.message.findMany({
         where: {
@@ -194,7 +229,8 @@ export const setupSocketIO = async (io: Server) => {
         status: "success",
         room: state.getroom({ roomId: dbRoom.id }),
         clients: state.getroom({ roomId: dbRoom.id }).clients,
-        // cursors: Object.fromEntries(cursors),
+        cursors: state.getCursorsInRoom(dbRoom.id),
+        fileSystemTree: dirs,
         msgsList: msgsList,
       } as UserJoinSuccess);
       //update lobby
@@ -207,12 +243,15 @@ export const setupSocketIO = async (io: Server) => {
       socket.broadcast.to(dbRoom.name).emit(USER_JOINED, {
         user: { ...user, room: { id: dbRoom.id, name: dbRoom.name } },
         clients: state.getroom({ roomId: dbRoom.id }).clients,
+        cursors: state.getCursorsInRoom(dbRoom.id),
       } as UserJoined);
     });
     // ----------------- ROOM LEAVING -----------------
     socket.on(USER_LEAVE, async ({ room, user }: UserLeave) => {
       socket.leave(room.name);
       state.leaveRoom(socket.id);
+      state.removeCursor(user.id || 0);
+
       socket.broadcast.emit(LOBBY_UPDATED, {
         type: "remove-user-from-room",
         room,
@@ -309,30 +348,47 @@ export const setupSocketIO = async (io: Server) => {
         console.log(err);
       }
     });
-    socket.on(CODE_UPDATE, (payload) => {
-      // console.log("code-change", payload);
-
-      const { content, user, roomInfo } = payload;
-      socket.to(roomInfo.name).emit(CODE_UPDATED, payload);
-      saveCodeToDB(payload);
+    socket.on(CODE_UPDATE, ({ room, file, user, change }: CodeUpdate) => {
+      console.log("code-change", change);
+      socket.to(room.name).emit(CODE_UPDATED, {
+        user,
+        change,
+        room,
+      } as CodeUpdated);
+      // console.log(user);
+      // TODO: complete this function def
     });
-    socket.on(CURSOR_UPDATE, (payload) => {
-      const { user, cursor, roomInfo } = payload;
-      cursors.set(user.id, cursor);
-      // console.log("change-user-cursor", payload);
-      socket.to(roomInfo.name).emit(CURSOR_UPDATED, payload);
+    socket.on(CODE_SAVE, async ({ file, user, code }: CodeSave, cb) => {
+      // console.log("code-change", );
+      const res = await state.updateFileContent(file.id, code);
+
+      cb(res);
+      // socket.to(room.name).emit(CODE_UPDATED, {
+      //   user,
+      //   change,
+      //   room,
+      // } as CodeUpdated);
+      // console.log(user);
+      // TODO: complete this function def
+      // saveCodeToDB({ code: event.value, roomInfo, user });
+    });
+    socket.on(CURSOR_UPDATE, (payload: CursorUpdate) => {
+      const { user, newCursor, room } = payload;
+
+      state.updateCursor({ user, newPos: newCursor.pos });
+      socket.to(room.name).emit(CURSOR_UPDATED, {
+        user,
+        room,
+        newCursor: newCursor,
+      } as CursorUpdated);
     });
     socket.on(LANG_UPDATE, async (payload) => {
-      const { roomInfo, lang } = payload;
-      state.updateRoom(roomInfo.id, { lang: lang });
-      io.to(roomInfo.name).emit(
-        LANG_UPDATED,
-        state.getroom({ roomId: roomInfo.id })
-      );
+      const { room, lang } = payload;
+      state.updateRoom(room.id, { lang: lang });
+      io.to(room.name).emit(LANG_UPDATED, state.getroom({ roomId: room.id }));
     });
     socket.on(CODE_EXEC_START, async (payload) => {
-      // console.log("run-code", payload);
-      io.to(payload.roomInfo.name).emit(CODE_EXEC_START, payload);
+      io.to(payload.room.name).emit(CODE_EXEC_START, payload);
       const res = await execCode({
         lang: payload.lang,
         code: payload.code,
@@ -340,8 +396,7 @@ export const setupSocketIO = async (io: Server) => {
         options: { maxBuffer: 1024 * 1024, timeout: 3000 },
       });
 
-      // console.log(res);
-      io.to(payload.roomInfo.name).emit(CODE_EXEC_END, {
+      io.to(payload.room.name).emit(CODE_EXEC_END, {
         ...payload,
         res,
       });
@@ -351,15 +406,14 @@ export const setupSocketIO = async (io: Server) => {
 
 const saveCodeToDB = async (payload: {
   code: string;
-  userr: User;
-  roomInfo: { id: number; name: string };
+  user: ISocketUser;
+  room: { id: number; name: string };
 }) => {
-  const { code, roomInfo } = payload;
+  const { code, room } = payload;
 
-  console.log(payload);
   await prisma.room.update({
     where: {
-      id: roomInfo.id,
+      id: room.id,
     },
     data: {
       content: code,

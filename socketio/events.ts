@@ -22,7 +22,7 @@ export interface ISocketRoom {
   ownerId?: number;
   createdAt?: Date;
   updatedAt?: Date;
-  owner: ISocketUser;
+  owner?: ISocketUser;
   clients?: ISocketUser[];
   cursors?: any[];
   msgsList?: any[];
@@ -59,17 +59,31 @@ export const ROOM_UPDATE = "room-update";
 export const ROOM_UPDATE_FAILED = "room-update-failed";
 export const ROOM_UPDATE_SUCCESS = "room-update-success";
 export const ROOM_UPDATED = "room-updated";
+// get
+export const ROOM_GET = "room-get";
 
 // ---------- IDE EVENTS ----------
 export const LANG_UPDATE = "lang-update";
 export const LANG_UPDATED = "lang-updated";
 export const CODE_UPDATE = "code-update";
 export const CODE_UPDATED = "code-updated";
+export const CODE_SAVE = "code-save";
+export const CODE_SAVED = "code-saved";
 export const CURSOR_UPDATE = "cursor-update";
 export const CURSOR_UPDATED = "cursor-updated";
 
 export const CODE_EXEC_START = "code-exec-start";
 export const CODE_EXEC_END = "code-exec-end";
+
+// ---------- FILE EVENTS ----------
+export const FILE_GET = "file-get";
+export const FILE_RECEIVE = "file-receive";
+export const FILE_CREATE = "file-create";
+export const FILE_CREATED = "file-created";
+export const FILE_UPDATE = "file-update";
+export const FILE_UPDATED = "file-updated";
+export const FILE_DELETE = "file-delete";
+export const FILE_DELETED = "file-deleted";
 
 // ---------- CHAT EVENTS ----------
 export const MESSAGE_SEND = "message-send";

@@ -5,7 +5,7 @@ export interface IProblemWithSubmissions extends Problem {
   submissions?: Submission[];
 }
 
-export type Lang = "js" | "py" | "cpp" | "c" | "java";
+export type Lang = "js" | "py" | "cpp" | "c" | "java" | "other";
 
 export interface ITestCase {
   input: string;
@@ -40,7 +40,6 @@ export interface IEvalResult {
   isPublic?: boolean;
   isCorrect?: boolean;
 }
-
 
 export type ILeague =
   | "noob"

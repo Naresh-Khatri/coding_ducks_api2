@@ -20,7 +20,7 @@ export const getUserFiles = async (req: Request, res: Response) => {
   try {
     const files = await prisma.file.findMany({
       where: {
-        userId: Number(userID),
+        ownerId: Number(userID),
       },
       orderBy: {
         fileName: "asc",

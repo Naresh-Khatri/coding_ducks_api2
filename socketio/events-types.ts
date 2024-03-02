@@ -1,11 +1,49 @@
+import { Lang } from "../types";
 import { ISocketRoom, ISocketUser } from "./events";
 
 export interface IMessage {
   user: { id: number; username: string; photoURL: string };
-  room: { id: number; name: string };
+  room: ISocketRoom;
   text: string;
   time?: Date;
 }
+
+export interface ICursorPos {
+  lineNumber: number;
+  column: number;
+}
+export interface ICursor {
+  user: ISocketUser;
+  room: ISocketRoom;
+  cursor: {
+    pos: ICursorPos;
+    selection?: { start: ICursorPos; end: ICursorPos };
+  };
+  color: { name: string; value: string };
+}
+
+export interface Entity {
+  id: number;
+  ownerId: number;
+  roomId: number;
+  createdAt: Date;
+  updatedAt: Date;
+  parentDirId: number | null;
+  isActive?: boolean;
+}
+export interface IFile extends Entity {
+  fileName: string;
+  code: string;
+  lang: Lang;
+}
+export interface IDirectory extends Entity {
+  name: string;
+  files?: IFile[];
+  childDirs?: IDirectory[];
+}
+
+// ---------- ADDED AFTER YJS ----------
+// TO BE ADDED
 
 // ---------- GENERICS ----------
 export interface CommonFailed {
@@ -42,7 +80,8 @@ export interface UserJoinSuccess {
   status: "success";
   room: ISocketRoom;
   clients: ISocketUser[];
-  cursors?: any[];
+  cursors?: ICursor[];
+  fileSystemTree: IDirectory[];
   msgsList?: any[];
 }
 export interface UserJoinFailed {
@@ -52,6 +91,7 @@ export interface UserJoinFailed {
 export interface UserJoined {
   user: ISocketUser;
   clients: ISocketUser[];
+  cursors: ICursor[];
 }
 export interface UserLeave {
   user: ISocketUser;
@@ -60,10 +100,12 @@ export interface UserLeave {
 export interface UserLeft {
   user: ISocketUser;
   room: ISocketRoom;
+  cursors: ICursor[];
 }
 export interface UserLost {
   user: ISocketUser;
   room: ISocketRoom;
+  cursors: ICursor[];
 }
 
 // ---------- ROOMS ----------
@@ -113,22 +155,78 @@ export interface LangUpdated {
   user: ISocketUser;
   updatedRoom: ISocketRoom;
 }
+export interface ICodeChangeEvent {
+  // value: string;
+  // meta: {
+  //   action: "insert" | "remove";
+  //   start: ICursorPos;
+  //   end: ICursorPos;
+  //   lines: string[];
+  //   id: number;
+  // };
+  text: string;
+  range: {
+    start: { lineNumber: number; column: number };
+    end: { lineNumber: number; column: number };
+  };
+}
 export interface CodeUpdate {
   user: ISocketUser;
-  code: string;
+  file: { id: number };
+  room: ISocketRoom;
+  change: ICodeChangeEvent;
 }
 export interface CodeUpdated {
   user: ISocketUser;
+  file: { id: number };
+  room: ISocketRoom;
+  change: ICodeChangeEvent;
+}
+export interface CodeSave {
+  user: ISocketUser;
+  file: { id: number };
   code: string;
 }
-// export interface CursorUpdate{
-//   user: ISocketUser;
-//   updatedRoom: ISocketRoom;
-// }
-// export interface CursorUpdated{
-//   user: ISocketUser;
-//   updatedRoom: ISocketRoom;
-// }
+export interface CodeSaved {
+  user: ISocketUser;
+  file: { id: number };
+  code: string;
+}
+export interface CursorUpdate {
+  newCursor: {
+    pos: ICursorPos;
+    selection?: { start: ICursorPos; end: ICursorPos };
+  };
+  user: ISocketUser;
+  room: ISocketRoom;
+}
+export interface CursorUpdated {
+  newCursor: {
+    pos: ICursorPos;
+    selection?: { start: ICursorPos; end: ICursorPos };
+  };
+  user: ISocketUser;
+  room: ISocketRoom;
+}
+
+// ---------- FILES EVENTS ----------
+export interface FileCreate {
+  parentDirId?: number;
+  name: string;
+  room: ISocketRoom;
+  user: ISocketUser;
+}
+export interface FileUpdate {
+  fileId: number;
+  room: ISocketRoom;
+  user: ISocketUser;
+  newName?: string;
+}
+export interface FileDelete {
+  fileId: number;
+  room: ISocketRoom;
+  user: ISocketUser;
+}
 
 // ---------- CHAT EVENTS ----------
 export interface MessageSend {
