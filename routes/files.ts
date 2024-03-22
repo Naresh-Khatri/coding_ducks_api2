@@ -1,13 +1,17 @@
-import { Router } from 'express'
-import * as filesController from '../controllers/files'
+import { Router } from "express";
+import * as filesController from "../controllers/files";
+import {
+  checkIfAdmin,
+  checkIfAuthenticated,
+} from "../middlewares/auth-middleware";
 
-const router = Router()
+const router = Router();
 
 //TODO: add auth
-router.get('/all', filesController.getAllFiles)
-router.get('/:userID', filesController.getUserFiles)
-router.post('/', filesController.createUserFile)
-router.patch('/:id', filesController.updateUserFile)
-router.delete('/:id', filesController.deleteUserFile)
+router.get("/all", [checkIfAdmin], filesController.getAllFiles);
+router.get("/:fileId", filesController.getFile);
+router.post("/", [checkIfAuthenticated], filesController.createFile);
+router.patch("/:id", filesController.updateFile);
+router.delete("/:id", filesController.deleteFile);
 
-export default router
+export default router;

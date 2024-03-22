@@ -1,29 +1,31 @@
 import { Request, Response } from "express";
 import prisma from "../lib/prisma";
 
-const getPlaceholderText = (lang: String) => {
-  switch (lang) {
-    case "py":
-      return 'print("Hi mom!")';
-    case "js":
-      return 'console.log("Hi mom!")';
-    case "java":
-      return 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hi mom!");\n    }\n}';
-    case "c":
-      return '#include <stdio.h>\nint main() {\n    printf("Hi mom!");\n    return 0;\n}';
-    case "cpp":
-      return '#include <iostream>\nint main() {\n    std::cout << "Hi mom!";\n    return 0;\n}';
+export const createFile = async (req: Request, res: Response) => {
+  try {
+    const { fileName, roomId, code, parentDirId, lang, userId } = req.body;
+    const files = await prisma.file.create({
+      data: {
+        fileName,
+        code,
+        lang,
+        owner: { connect: { id: userId } },
+        room: { connect: { id: roomId } },
+        parentDir: { connect: { id: parentDirId } },
+      },
+    });
+    res.json(files);
+  } catch (err) {
+    console.log(err);
+    res.status(404).json({ message: "somethings wrong" });
   }
 };
-export const getUserFiles = async (req: Request, res: Response) => {
-  const { userID } = req.params;
+export const getFile = async (req: Request, res: Response) => {
+  const { fileId } = req.params;
   try {
-    const files = await prisma.file.findMany({
+    const files = await prisma.file.findFirst({
       where: {
-        ownerId: Number(userID),
-      },
-      orderBy: {
-        fileName: "asc",
+        id: +fileId,
       },
     });
     res.json(files);
@@ -33,25 +35,12 @@ export const getUserFiles = async (req: Request, res: Response) => {
   }
 };
 
-export const createUserFile = async (req: Request, res: Response) => {
+export const updateFile = async (req: Request, res: Response) => {
   try {
-    const createdFile = await prisma.file.create({
-      data: {
-        ...req.body,
-        code: getPlaceholderText(req.body.lang),
-      },
-    });
-    res.status(201).json(createdFile);
-  } catch (err) {
-    console.log(err);
-    res.status(404).json({ message: "couldnt create file!" });
-  }
-};
-export const updateUserFile = async (req: Request, res: Response) => {
-  try {
+    const { fileId } = req.params;
     const updatedFile = await prisma.file.update({
       where: {
-        id: Number(req.params.id),
+        id: +fileId,
       },
       data: {
         ...req.body,
@@ -63,7 +52,7 @@ export const updateUserFile = async (req: Request, res: Response) => {
     res.status(404).json({ message: "couldnt update file!" });
   }
 };
-export const deleteUserFile = async (req: Request, res: Response) => {
+export const deleteFile = async (req: Request, res: Response) => {
   try {
     const deletedFile = await prisma.file.delete({
       where: {

@@ -107,3 +107,67 @@ export const checkIfAdmin = async (
     return res.status(500).send({ message: "Internal Server Error" });
   }
 };
+
+export const checkIfUserAllowedInRoom = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { roomId } = req.params;
+    const dbRoom = await prisma.room.findFirst({
+      where: {
+        id: +roomId,
+      },
+      select: {
+        ownerId: true,
+        isPublic: true,
+        allowedUsers: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+    if (dbRoom?.isPublic) {
+      return next();
+    }
+
+    const authToken = getAuthToken(req);
+    // console.log(req.headers.authorization);
+    if (!authToken) {
+      return res.status(404).send({ message: "unauthorized", code: 404 });
+    }
+    const decodedUser = await admin.auth().verifyIdToken(authToken);
+    const dbUser = await prisma.user.findFirst({
+      where: { googleUID: decodedUser.uid },
+      select: {
+        id: true,
+      },
+    });
+    if (!dbUser) {
+      return res.status(404).send({ message: "user not found!", code: 404 });
+    }
+    if (!dbRoom) {
+      return res.status(404).send({ message: "room not found!", code: 404 });
+    }
+    if (dbRoom?.ownerId === dbUser?.id) {
+      return next();
+    }
+    if (dbRoom?.allowedUsers.some((user) => user.id === dbUser?.id)) {
+      return next();
+    }
+    return res.status(269).send({ message: "unauthorized", code: 269 });
+  } catch (err: any) {
+    // console.error(err);
+    console.error(err.code);
+    if (err.code === "auth/argument-error") {
+      console.log("You have not provided a token.");
+      return res.status(401).send({ message: "unauthorized", code: 401 });
+    } else if (err.code === "auth/id-token-expired") {
+      return res.status(401).send({ message: "token expired", code: 401 });
+    } else {
+      return res.status(500).send({ message: "Internal Server Error" });
+    }
+  }
+};

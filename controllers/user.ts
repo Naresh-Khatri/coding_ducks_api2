@@ -81,6 +81,31 @@ export const getUser = async (req: Request, res: Response) => {
     console.log(err);
   }
 };
+
+export const getSearchUser = async (req: Request, res: Response) => {
+  try {
+    const users = await prisma.user.findMany({
+      where: {
+        OR: [
+          { username: { contains: req.params.username, mode: "insensitive" } },
+          { fullname: { contains: req.params.username, mode: "insensitive" } },
+        ],
+      },
+      select: {
+        id: true,
+        fullname: true,
+        username: true,
+        photoURL: true,
+      },
+    });
+    if (!users) return res.status(404).json({ message: "users not found" });
+
+    res.json({ data: users, message: "success", code: 69 });
+  } catch (err) {
+    res.status(404).json({ message: "somethings wrong" });
+    console.log(err);
+  }
+};
 //TODO: this function need some optimization
 export const getUserUsingUsername = async (req: Request, res: Response) => {
   try {
@@ -464,6 +489,26 @@ export const uploadProfilePicture = async (req: Request, res: Response) => {
       },
     });
     res.status(200).json(updatedUser);
+  } catch (err) {
+    console.log(err);
+    res.status(404).json({ message: "somethings wrong" });
+  }
+};
+
+export const getUserRooms = async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  console.log(userId);
+
+  try {
+    const rooms = await prisma.room.findMany({
+      where: {
+        ownerId: +userId,
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+    });
+    res.status(200).json(rooms);
   } catch (err) {
     console.log(err);
     res.status(404).json({ message: "somethings wrong" });
