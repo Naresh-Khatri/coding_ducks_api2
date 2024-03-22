@@ -23,17 +23,26 @@ import {
   ROOM_CREATE_FAILED,
   ROOM_CREATE_SUCCESS,
   ROOM_GET,
+  ROOM_UPDATE,
+  ROOM_UPDATED,
   SERVER_INFO_RECEIVE,
   USER_CONNECTED,
   USER_DATA_SEND,
   USER_DISCONNECTED,
   USER_JOIN,
   USER_JOINED,
+  USER_JOIN_DUCKLET,
   USER_JOIN_FAILED,
+  USER_JOIN_REQUEST,
+  USER_JOIN_REQUESTED,
+  USER_JOIN_REQUEST_ACCEPT,
+  USER_JOIN_REQUEST_ACCEPTED,
   USER_JOIN_SUCCESS,
   USER_LEAVE,
   USER_LEFT,
   USER_LOST,
+  USER_REMOVED_FROM_DUCKLET,
+  USER_REMOVE_FROM_DUCKLET,
 } from "./events";
 import {
   CodeSave,
@@ -54,19 +63,28 @@ import {
   UserDataSend,
   UserDisconnected,
   UserJoin,
+  UserJoinDucklet,
   UserJoinSuccess,
   UserJoined,
   UserLeave,
   UserLeft,
   UserLost,
 } from "./events-types";
+import clientsStateManager from "./clients-manager";
 
 export const setupSocketIO = async (io: Server) => {
   // get rooms list from db and create a rooms list which would contains clients
   const dbRooms = await prisma.room.findMany({ include: { owner: true } });
   const state = RoomsStateManager({ initialRooms: dbRooms });
+  const state2 = clientsStateManager();
 
   io.on("connection", (socket) => {
+    //todo: add auth
+    const { userId } = socket.handshake.query;
+    if (userId) {
+      state2.addClient({ userId: +userId, socketId: socket.id });
+    }
+    console.log(socket.handshake.query.userId);
     // ----------------- FILES -----------------
     socket.on(FILE_GET, async (payload, cb) => {
       const file = await state.getFile(payload.fileId);
@@ -75,11 +93,48 @@ export const setupSocketIO = async (io: Server) => {
 
     // extras after adding Yjs
     socket.on(ROOM_GET, async ({ roomName }: { roomName: string }, cb) => {
-      console.log(roomName)
-      const room = await prisma.room.findFirst({
+      const dbRoom = await prisma.room.findFirst({
         where: { name: roomName },
       });
-      cb({ status: "success", data: room });
+      if (!dbRoom || !dbRoom.id) {
+        return cb({ status: "error", message: "Room not found" });
+      }
+      const dirs = await prisma.directory.findMany({
+        where: { roomId: dbRoom.id, parentDir: null },
+        include: getRecursiveInclude({
+          depth: 6,
+          obj: {
+            files: {
+              select: {
+                id: true,
+                fileName: true,
+                parentDirId: true,
+                lang: true,
+                // isDeletable: true,
+                // isArchived: true,
+              },
+            },
+          },
+        }),
+      });
+
+      // get room messages
+      const msgsList = await prisma.message.findMany({
+        where: {
+          roomId: dbRoom.id,
+        },
+        include: {
+          user: {
+            select: {
+              fullname: true,
+            },
+          },
+        },
+        orderBy: {
+          time: "desc",
+        },
+      });
+      cb({ status: "success", data: { room: dbRoom, fs: dirs, msgsList } });
     });
 
     // socket sends their user
@@ -93,7 +148,7 @@ export const setupSocketIO = async (io: Server) => {
       socket.emit(SERVER_INFO_RECEIVE, {
         clients: state.getConnectedClients(),
 
-        rooms: state.getrooms(),
+        rooms: state.getRooms(),
       } as ServerInfoReceive);
       // notify all about user connected
       io.emit(USER_CONNECTED, {
@@ -103,6 +158,7 @@ export const setupSocketIO = async (io: Server) => {
 
     socket.on(DISCONNECT, async (...args) => {
       const disconnectedClient = state.disconnectClient(socket.id);
+      state2.removeClient(socket.id);
       // if user was in a room
       if (disconnectedClient.room?.name) {
         // remove their cursor
@@ -146,7 +202,7 @@ export const setupSocketIO = async (io: Server) => {
       }
 
       // check if roomname exists
-      if (!state.getroom({ roomName: room.name })) {
+      if (!state.getRoom({ roomName: room.name })) {
         socket.emit(USER_JOIN_FAILED, {
           status: "failed",
           msg: "room doesnt exist",
@@ -227,8 +283,8 @@ export const setupSocketIO = async (io: Server) => {
       //send room info to client
       socket.emit(USER_JOIN_SUCCESS, {
         status: "success",
-        room: state.getroom({ roomId: dbRoom.id }),
-        clients: state.getroom({ roomId: dbRoom.id }).clients,
+        room: state.getRoom({ roomId: dbRoom.id }),
+        clients: state.getRoom({ roomId: dbRoom.id }).clients,
         cursors: state.getCursorsInRoom(dbRoom.id),
         fileSystemTree: dirs,
         msgsList: msgsList,
@@ -242,7 +298,7 @@ export const setupSocketIO = async (io: Server) => {
       //send updated client list to all users in room
       socket.broadcast.to(dbRoom.name).emit(USER_JOINED, {
         user: { ...user, room: { id: dbRoom.id, name: dbRoom.name } },
-        clients: state.getroom({ roomId: dbRoom.id }).clients,
+        clients: state.getRoom({ roomId: dbRoom.id }).clients,
         cursors: state.getCursorsInRoom(dbRoom.id),
       } as UserJoined);
     });
@@ -385,7 +441,7 @@ export const setupSocketIO = async (io: Server) => {
     socket.on(LANG_UPDATE, async (payload) => {
       const { room, lang } = payload;
       state.updateRoom(room.id, { lang: lang });
-      io.to(room.name).emit(LANG_UPDATED, state.getroom({ roomId: room.id }));
+      io.to(room.name).emit(LANG_UPDATED, state.getRoom({ roomId: room.id }));
     });
     socket.on(CODE_EXEC_START, async (payload) => {
       io.to(payload.room.name).emit(CODE_EXEC_START, payload);
@@ -400,6 +456,119 @@ export const setupSocketIO = async (io: Server) => {
         ...payload,
         res,
       });
+    });
+
+    socket.on(
+      USER_JOIN_REQUEST,
+      async ({ roomId, userId }: { roomId: number; userId: number }, cb) => {
+        const room = await prisma.room.findFirst({
+          where: { id: roomId },
+          select: { ownerId: true },
+        });
+        const user = await prisma.user.findFirst({
+          where: { id: userId },
+          select: { id: true, username: true, photoURL: true, fullname: true },
+        });
+        if (!room?.ownerId || !user?.id) {
+          cb({ status: "error", msg: "User or room not found" });
+        }
+        // if room and user exist then emit event to sockIds if ownner
+        const ownerSocks = state2
+          .getClients()
+          .filter((c) => c.id === room?.ownerId);
+
+        if (ownerSocks.length === 0) {
+          cb({ status: "error", msg: "Owner not online" });
+          return;
+        }
+
+        ownerSocks.forEach((owner) => {
+          if (!owner.socketId) return;
+          io.to(owner.socketId).emit(USER_JOIN_REQUESTED, {
+            user,
+            room,
+          });
+          cb({ status: "success", msg: "Request sent" });
+        });
+
+        // console.log(payload)
+        // const ownerSockIds = state2
+        //   .getClients()
+        //   .filter((c) => c.id === payload.room.ownerId);
+        // console.log(ownerSockIds);
+        // sent this event to a socket
+        // io.to();
+      }
+    );
+    socket.on(USER_JOIN_DUCKLET, async (payload: UserJoinDucklet, cb) => {
+      const { user, room } = payload;
+      const dbUser = await prisma.user.findFirst({ where: { id: user.id } });
+      const dbRoom = await prisma.room.findFirst({
+        where: { id: room.id },
+        include: { allowedUsers: true },
+      });
+      if (!dbUser || !dbRoom) {
+        return cb({ status: "error", msg: "User or room not found" });
+      }
+      const userIsAllowed =
+        dbRoom.isPublic ||
+        dbRoom.ownerId === dbUser.id ||
+        dbRoom.allowedUsers.some((u) => u.id === dbUser.id);
+
+      if (!userIsAllowed) {
+        console.log("allowed: ", dbRoom.allowedUsers);
+        console.log("req userid: ", user.id);
+        console.log("is public", dbRoom.isPublic);
+        return cb({ status: "error", msg: "User not allowed" });
+      }
+
+      socket.join(dbRoom.name);
+
+      cb({ status: "success", msg: "Joined room" });
+
+      io.to(dbRoom.name).emit(ROOM_UPDATED, payload);
+    });
+    socket.on(
+      USER_JOIN_REQUEST_ACCEPT,
+      async ({ roomId, userId }: { roomId: number; userId: number }) => {
+        const reqUserSocks = state2.getClients().filter((c) => c.id === userId);
+
+        if (reqUserSocks.length === 0) return;
+
+        console.log("requsers", reqUserSocks);
+        reqUserSocks.forEach((reqUserSock) => {
+          if (!reqUserSock.socketId) return;
+          io.to(reqUserSock.socketId).emit(USER_JOIN_REQUEST_ACCEPTED, {
+            roomId,
+          });
+        });
+      }
+    );
+    socket.on(
+      USER_REMOVE_FROM_DUCKLET,
+      async ({ userId }: { userId: number }) => {
+        try {
+          const reqUserSocks = state2
+            .getClients()
+            .filter((c) => c.id === userId);
+
+          if (reqUserSocks.length === 0) return;
+
+          reqUserSocks.forEach((reqUserSock) => {
+            if (!reqUserSock.socketId) return;
+            io.to(reqUserSock.socketId).emit(USER_REMOVED_FROM_DUCKLET);
+          });
+        } catch (err) {
+          throw err;
+        }
+      }
+    );
+
+    socket.on(ROOM_UPDATE, async (payload) => {
+      io.to(payload.room.name).emit(ROOM_UPDATED, payload);
+    });
+    socket.on(ROOM_UPDATE, async (payload) => {
+      io.to(payload.room.name).emit(ROOM_UPDATED, payload);
     });
   });
 };
