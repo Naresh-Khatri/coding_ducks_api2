@@ -26,6 +26,11 @@ export interface ISocketRoom {
   clients?: ISocketUser[];
   cursors?: any[];
   msgsList?: any[];
+
+  type?: "web" | "normal";
+  contentHTML?: string;
+  contentCSS?: string;
+  contentJS?: string;
 }
 export const CONNECT = "connect";
 export const DISCONNECT = "disconnect";
@@ -47,6 +52,16 @@ export const USER_JOINED = "user-joined";
 export const USER_LEAVE = "user-leave";
 export const USER_LEFT = "user-left";
 export const USER_LOST = "user-lost";
+
+export const USER_JOIN_REQUEST = "user-join-request";
+export const USER_JOIN_REQUEST_ACCEPT = "user-join-request-accept";
+export const USER_JOIN_REQUEST_ACCEPTED = "user-join-request-accepted";
+export const USER_JOIN_REQUESTED = "user-join-requested";
+export const USER_JOIN_DUCKLET = "user-join-ducklet";
+export const USER_JOINED_DUCKLET = "user-joined-ducklet";
+export const USER_LEAVE_DUCKLET = "user-leave-ducklet";
+export const USER_REMOVE_FROM_DUCKLET = "user-leave-ducklet";
+export const USER_REMOVED_FROM_DUCKLET = "user-leave-ducklet";
 
 // ---------- ROOMS ----------
 // create

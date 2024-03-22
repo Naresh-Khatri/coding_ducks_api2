@@ -130,7 +130,11 @@ export interface RoomCreated {
 
 export interface RoomUpdate {
   user: ISocketUser;
-  newRoom: ISocketRoom;
+  updatedRoom: ISocketRoom;
+}
+export interface RoomUpdated {
+  user: ISocketUser;
+  updatedRoom: ISocketRoom;
 }
 export interface RoomUpdateFailed {
   status: "failed";
@@ -138,10 +142,6 @@ export interface RoomUpdateFailed {
 }
 export interface RoomUpdateSuccess {
   status: "success";
-  updatedRoom: ISocketRoom;
-}
-export interface RoomUpdated {
-  user: ISocketUser;
   updatedRoom: ISocketRoom;
 }
 
@@ -242,3 +242,14 @@ export interface MessageSendSuccess {
   content: string;
 }
 export type MessageReceive = IMessage;
+
+// ---------- OTHER EVENTS ----------
+
+export interface UserJoinDucklet {
+  user: ISocketUser;
+  room: ISocketRoom;
+}
+export interface UserJoinedDucklet {
+  user: ISocketUser;
+  room: ISocketRoom;
+}
