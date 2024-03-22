@@ -1,22 +1,9 @@
-import { Room } from "@prisma/client";
 import prisma, { getRecursiveInclude } from "../lib/prisma";
 import { Lang } from "../types";
-import { ISocketRoom } from "./events";
+import { ISocketRoom, ISocketUser } from "./events";
 import { getRandomColor } from "../lib/utils";
 import { IDirectory, ICursor, ICursorPos, IFile } from "./events-types";
-
-interface ISocketUser {
-  socketId?: string;
-  id?: number;
-  fullname?: string;
-  email?: string;
-  photoURL?: string;
-  username?: string;
-  room?: {
-    id: number;
-    name: string;
-  };
-}
+import { Room } from "@prisma/client";
 
 interface ErrorMsg {
   msg: string;
@@ -128,7 +115,7 @@ const RoomsStateManager = ({ initialRooms }: { initialRooms: IRoom[] }) => {
     },
     // ----------- ROOM ACTIONS -----------
     // GET ROOMS
-    getrooms() {
+    getRooms() {
       return rooms.map((room) => {
         return {
           ...room,
@@ -138,7 +125,7 @@ const RoomsStateManager = ({ initialRooms }: { initialRooms: IRoom[] }) => {
     },
 
     // GET ROOM
-    getroom({ roomId, roomName }: { roomId?: number; roomName?: string }) {
+    getRoom({ roomId, roomName }: { roomId?: number; roomName?: string }) {
       return {
         ...rooms.find((r) => {
           if (roomId) return r.id == roomId;
