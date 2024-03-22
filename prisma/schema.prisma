@@ -16,6 +16,11 @@ enum LANG {
   other
 }
 
+enum RoomType {
+  web
+  normal
+}
+
 model User {
   id           Int       @id @default(autoincrement())
   fullname     String    @db.VarChar(100)
@@ -45,14 +50,15 @@ model User {
   upvotedComments   ProblemComment[] @relation("CommentUpvotes")
   downvotedComments ProblemComment[] @relation("CommentDownvotes")
 
-  messages  Message[]
-  rooms     Room[]
-  Feedbacks Feedback[]
+  messages     Message[]
+  roomsCreated Room[]     @relation(name: "roomOwner")
+  Feedbacks    Feedback[]
 
-  createdAt   DateTime      @default(now()) @db.Timestamp(6)
-  updatedAt   DateTime      @updatedAt @db.Timestamp(6)
-  fileDeltas  FileHistory[]
-  Directories Directory[]
+  createdAt      DateTime      @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime      @updatedAt @db.Timestamp(6)
+  fileDeltas     FileHistory[]
+  Directories    Directory[]
+  roomsAllowedIn Room[]        @relation("roomsAllowedForUser")
 }
 
 model Directory {
@@ -229,17 +235,26 @@ model ExerciseSubmission {
   user       User     @relation(fields: [userId], references: [id])
 }
 
-//add allowed users
+// todo:add allowed users
+// when room type is 'web', room will have html, css and js code directly here
 model Room {
-  id         Int       @id @default(autoincrement())
-  name       String    @unique
-  isPublic   Boolean   @default(true)
-  lang       String    @default("py")
-  content    String    @default("print('hello world')")
-  owner      User      @relation(fields: [ownerId], references: [id])
-  ownerId    Int
-  created_at DateTime  @default(now()) @db.Timestamp(6)
-  message    Message[]
+  id           Int       @id @default(autoincrement())
+  name         String    @unique
+  isPublic     Boolean   @default(true)
+  lang         String    @default("py")
+  content      String    @default("print('hello world')")
+  owner        User      @relation(name: "roomOwner", fields: [ownerId], references: [id])
+  ownerId      Int
+  created_at   DateTime  @default(now()) @db.Timestamp(6)
+  message      Message[]
+  type         RoomType  @default(normal)
+  allowedUsers User[]    @relation("roomsAllowedForUser")
+
+  yDoc        Bytes?
+  contentHEAD String? @default("<script src=\"https://cdn.tailwindcss.com\"></script>")
+  contentHTML String? @default("<h1> Hello world! </h1>")
+  contentCSS  String? @default("h1{\n color: purple;\n}")
+  contentJS   String? @default("console.log('Hello User!')")
 
   createdAt DateTime    @default(now()) @db.Timestamp(6)
   updatedAt DateTime    @updatedAt @db.Timestamp(6)
