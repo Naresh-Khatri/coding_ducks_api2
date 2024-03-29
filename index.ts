@@ -4,7 +4,6 @@ import morgan from "morgan";
 import cors from "cors";
 
 import { Server } from "socket.io";
-import { YSocketIO } from "y-socket.io/dist/server";
 
 import usersRoute from "./routes/user";
 import filesRoute from "./routes/files";
@@ -17,7 +16,6 @@ import submissionsRoute from "./routes/submissions";
 import projectsRoute from "./routes/projects";
 import allowCORS from "./middlewares/allow-cors";
 import { setupSocketIO } from "./socketio";
-import { setupYSocketIO } from "./socketio/ysocketio";
 
 const PORT = Number(process.env.PORT || 3333);
 
@@ -33,10 +31,6 @@ const io = new Server(httpServer, {
 });
 
 setupSocketIO(io);
-
-const ysocketio = new YSocketIO(io, {levelPersistenceDir: "./persistenceDB", });
-ysocketio.initialize();
-setupYSocketIO(ysocketio);
 
 app.use("/runCode", codeRoute);
 app.use("/users", usersRoute);
