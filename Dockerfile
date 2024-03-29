@@ -40,4 +40,4 @@ RUN yarn install --frozen-lockfile --production
 COPY --from=base /app/dist ./dist
 
 RUN npx prisma generate
-CMD [ "node", "dist/index.js" ]
+# CMD [ "echo", "start" ]

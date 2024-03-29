@@ -9,10 +9,11 @@ services:
     volumes:
       - ./:/app
       - ./nodemon.json:/app/nodemon.json
-      - /app/node_modules
     container_name: codingducks-backend
     expose:
       - "3333"
+      - "3334"
     ports:
       - "3333:3333"
-    command: yarn dev
+      - "3334:3334"
+    command: yarn start
