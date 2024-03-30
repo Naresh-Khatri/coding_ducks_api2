@@ -46,7 +46,6 @@ export const getUserProjects = async (req: Request, res: Response) => {
         isPublic: true,
         name: true,
         ownerId: true,
-        type: true,
       },
       orderBy: { updatedAt: "desc" },
     });
@@ -71,7 +70,6 @@ export const getProject = async (req: Request, res: Response) => {
         isPublic: true,
         name: true,
         ownerId: true,
-        type: true,
       },
     });
     const dirs = await prisma.directory.findMany({

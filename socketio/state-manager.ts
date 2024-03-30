@@ -138,71 +138,71 @@ const RoomsStateManager = ({ initialRooms }: { initialRooms: IRoom[] }) => {
       };
     },
     // CREATE ROOMS
-    async createRoom({
-      newRoom,
-      user,
-    }: {
-      newRoom: { name: string; isPublic: boolean; lang: Lang };
-      user: ISocketUser;
-    }) {
-      try {
-        const savedRoom = await prisma.room.create({
-          data: {
-            name: newRoom.name,
-            isPublic: newRoom.isPublic,
-            content: "print('hello world')",
-            lang: newRoom.lang,
-            owner: { connect: { id: 23 } },
-            Directory: {
-              create: { owner: { connect: { id: user.id } }, name: "root" },
-            },
-          },
-          include: { owner: true },
-        });
-        rooms.push(savedRoom);
-      } catch (err) {
-        throw err;
-      }
-    },
+    // async createRoom({
+    //   newRoom,
+    //   user,
+    // }: {
+    //   newRoom: { name: string; isPublic: boolean; lang: Lang };
+    //   user: ISocketUser;
+    // }) {
+    //   try {
+    //     const savedRoom = await prisma.room.create({
+    //       data: {
+    //         name: newRoom.name,
+    //         isPublic: newRoom.isPublic,
+    //         content: "print('hello world')",
+    //         lang: newRoom.lang,
+    //         owner: { connect: { id: 23 } },
+    //         Directory: {
+    //           create: { owner: { connect: { id: user.id } }, name: "root" },
+    //         },
+    //       },
+    //       include: { owner: true },
+    //     });
+    //     rooms.push(savedRoom);
+    //   } catch (err) {
+    //     throw err;
+    //   }
+    // },
     // UPDATE ROOMS
-    async updateRoom(
-      roomId: number,
-      updatedRoom: {
-        name?: string;
-        isPublic?: boolean;
-        lang?: Lang;
-      }
-    ): Promise<Room> {
-      try {
-        const savedRoom = await prisma.room.update({
-          where: { id: roomId },
-          data: {
-            name: updatedRoom.name,
-            isPublic: updatedRoom.isPublic,
-            lang: updatedRoom.lang,
-          },
-          include: { owner: true },
-        });
-        rooms = rooms.map((room) => {
-          if (room.id === savedRoom.id) return savedRoom;
-          else return room;
-        });
-        return savedRoom;
-      } catch (err) {
-        throw err;
-      }
-    },
+    // async updateRoom(
+    //   roomId: number,
+    //   updatedRoom: {
+    //     name?: string;
+    //     isPublic?: boolean;
+    //     lang?: Lang;
+    //   }
+    // ): Promise<Room> {
+    //   try {
+    //     const savedRoom = await prisma.room.update({
+    //       where: { id: roomId },
+    //       data: {
+    //         name: updatedRoom.name,
+    //         isPublic: updatedRoom.isPublic,
+    //         lang: updatedRoom.lang,
+    //       },
+    //       include: { owner: true },
+    //     });
+    //     rooms = rooms.map((room) => {
+    //       if (room.id === savedRoom.id) return savedRoom;
+    //       else return room;
+    //     });
+    //     return savedRoom;
+    //   } catch (err) {
+    //     throw err;
+    //   }
+    // },
     // DELETE ROOMS
-    async deleteRoom({ roomId, user }: { roomId: number; user: ISocketUser }) {
-      try {
-        const deletedRoom = await prisma.room.delete({
-          where: { id: roomId },
-        });
-        rooms = rooms.filter((r) => r.id !== roomId);
-      } catch (err) {
-        throw err;
-      }
-    },
+    // async deleteRoom({ roomId, user }: { roomId: number; user: ISocketUser }) {
+    //   try {
+    //     const deletedRoom = await prisma.room.delete({
+    //       where: { id: roomId },
+    //     });
+    //     rooms = rooms.filter((r) => r.id !== roomId);
+    //   } catch (err) {
+    //     throw err;
+    //   }
+    // },
 
     // ----------- SOCKET ACTIONS -----------
     // CONNECT
