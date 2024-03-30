@@ -35,8 +35,8 @@ import clientsStateManager from "./clients-manager";
 
 export const setupSocketIO = async (io: Server) => {
   // get rooms list from db and create a rooms list which would contains clients
-  const dbRooms = await prisma.room.findMany({ include: { owner: true } });
-  const state = RoomsStateManager({ initialRooms: dbRooms });
+  // const dbRooms = await prisma.room.findMany({ include: { owner: true } });
+  // const state = RoomsStateManager({ initialRooms: dbRooms });
   const state2 = clientsStateManager();
 
   io.on("connection", (socket) => {
@@ -46,53 +46,12 @@ export const setupSocketIO = async (io: Server) => {
       state2.addClient({ userId: +userId, socketId: socket.id });
     }
     console.log(socket.handshake.query.userId);
-    // ----------------- FILES -----------------
-    socket.on(FILE_GET, async (payload, cb) => {
-      const file = await state.getFile(payload.fileId);
-      cb(file);
-    });
 
     // extras after adding Yjs
 
-    // socket sends their user
-    socket.on(USER_DATA_SEND, async ({ user }: UserDataSend) => {
-      // add user to state
-      const newClient = await state.connectClient({
-        socketId: socket.id,
-        user: { id: user.id, socketId: socket.id },
-      });
-      // send updated state to socket
-      socket.emit(SERVER_INFO_RECEIVE, {
-        clients: state.getConnectedClients(),
-
-        rooms: state.getRooms(),
-      } as ServerInfoReceive);
-      // notify all about user connected
-      io.emit(USER_CONNECTED, {
-        clients: state.getConnectedClients(),
-      } as UserConnected);
-    });
-
     socket.on(DISCONNECT, async (...args) => {
-      const disconnectedClient = state.disconnectClient(socket.id);
       state2.removeClient(socket.id);
       // if user was in a room
-      if (disconnectedClient.room?.name) {
-        // remove their cursor
-        state.removeCursor(disconnectedClient.id || 0);
-        // emit in room
-        io.to(disconnectedClient.room.name).emit(USER_LOST, {
-          room: disconnectedClient.room,
-          user: disconnectedClient,
-          cursors: state.getCursorsInRoom(disconnectedClient.room.id),
-        } as UserLost);
-        //update lobby (just pass ids for filtering)
-        socket.broadcast.emit(LOBBY_UPDATED, {
-          type: "remove-user-from-room",
-          room: disconnectedClient.room,
-          user: disconnectedClient,
-        });
-      }
     });
     socket.on(MESSAGE_SEND, async ({ msg }: MessageSend) => {
       const { room, text, user } = msg;
