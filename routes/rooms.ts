@@ -4,6 +4,7 @@ import {
   checkIfAdmin,
   checkIfAuthenticated,
   checkIfUserAllowedInRoom,
+  checkIfUserIsOwnerOfRoom,
 } from "../middlewares/auth-middleware";
 
 const router = Router();
@@ -30,6 +31,10 @@ router.patch(
   [checkIfAuthenticated],
   roomsController.updateRoomContents
 );
-router.delete("/:id", [checkIfAuthenticated], roomsController.deleteRoom);
+router.delete(
+  "/:roomId",
+  [checkIfAuthenticated, checkIfUserIsOwnerOfRoom],
+  roomsController.deleteRoom
+);
 ``;
 export default router;

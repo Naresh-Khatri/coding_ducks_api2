@@ -3,13 +3,14 @@ import prisma from "../lib/prisma";
 
 export const createRoom = async (req: Request, res: Response) => {
   try {
-    const newRoom = await prisma.file.create({
-      data: {
-        ...req.body,
-        owner: { connect: { id: req.body.userId } },
-      },
+    console.log(req.body);
+    const { name, description, isPublic } = req.body;
+    const { userId } = req.user;
+
+    const newRoom = await prisma.room.create({
+      data: { name, description, isPublic, owner: { connect: { id: userId } } },
     });
-    res.json(newRoom);
+    return res.status(200).json({ message: "success", data: newRoom });
   } catch (err) {
     console.log(err);
     res.status(404).json({ message: "somethings wrong" });
