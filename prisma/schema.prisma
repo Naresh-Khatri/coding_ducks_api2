@@ -239,18 +239,15 @@ model ExerciseSubmission {
 // when room type is 'web', room will have html, css and js code directly here
 model Room {
   id           Int       @id @default(autoincrement())
-  name         String    @unique
+  name         String
+  description  String?   @default("")
   isPublic     Boolean   @default(true)
-  lang         String    @default("py")
-  content      String    @default("print('hello world')")
   owner        User      @relation(name: "roomOwner", fields: [ownerId], references: [id])
   ownerId      Int
   created_at   DateTime  @default(now()) @db.Timestamp(6)
   message      Message[]
-  type         RoomType  @default(normal)
   allowedUsers User[]    @relation("roomsAllowedForUser")
 
-  yDoc        Bytes?
   contentHEAD String? @default("<script src=\"https://cdn.tailwindcss.com\"></script>")
   contentHTML String? @default("<h1> Hello world! </h1>")
   contentCSS  String? @default("h1{\n color: purple;\n}")
