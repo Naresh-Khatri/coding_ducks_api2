@@ -14,6 +14,7 @@ export const getUsers = async (req: Request, res: Response) => {
         username: true,
         photoURL: true,
         points: true,
+        updatedAt: true,
       },
       orderBy: {
         points: "desc",
