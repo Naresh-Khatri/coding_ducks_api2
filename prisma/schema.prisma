@@ -248,10 +248,10 @@ model Room {
   message      Message[]
   allowedUsers User[]    @relation("roomsAllowedForUser")
 
-  contentHEAD String? @default("<script src=\"https://cdn.tailwindcss.com\"></script>")
-  contentHTML String? @default("<h1> Hello world! </h1>")
-  contentCSS  String? @default("h1{\n color: purple;\n}")
-  contentJS   String? @default("console.log('Hello User!')")
+  contentHEAD String? @default("")
+  contentHTML String? @default("")
+  contentCSS  String? @default("")
+  contentJS   String? @default("")
 
   createdAt DateTime    @default(now()) @db.Timestamp(6)
   updatedAt DateTime    @updatedAt @db.Timestamp(6)
