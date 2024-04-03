@@ -23,6 +23,7 @@ import {
   USER_REMOVE_FROM_DUCKLET,
 } from "./events";
 import {
+  IMessage,
   MessageReceive,
   MessageSend,
   ServerInfoReceive,
@@ -53,7 +54,7 @@ export const setupSocketIO = async (io: Server) => {
       state2.removeClient(socket.id);
       // if user was in a room
     });
-    socket.on(MESSAGE_SEND, async ({ msg }: MessageSend) => {
+    socket.on(MESSAGE_SEND, async (msg: IMessage) => {
       const { room, text, user } = msg;
       try {
         const savedMsg = await prisma.message.create({
@@ -65,15 +66,10 @@ export const setupSocketIO = async (io: Server) => {
             photoURL: user.photoURL,
           },
         });
-        io.in(msg.room.name).emit(MESSAGE_RECEIVE, {
-          ...savedMsg,
-          user: {
-            id: savedMsg.userId,
-            username: savedMsg.username,
-            photoURL: savedMsg.photoURL,
-          },
-          room: { id: savedMsg.roomId, name: msg.room.name },
-        } as MessageReceive);
+        io.in(`room:${room.id}`).emit(MESSAGE_RECEIVE, {
+          ...msg,
+          time: savedMsg.updatedAt,
+        } as IMessage);
       } catch (err) {
         console.log(err);
       }
@@ -139,11 +135,11 @@ export const setupSocketIO = async (io: Server) => {
         return cb({ status: "error", msg: "User not allowed" });
       }
 
-      socket.join(dbRoom.name);
+      socket.join(`room:${dbRoom.id}`);
 
       cb({ status: "success", msg: "Joined room" });
 
-      io.to(dbRoom.name).emit(ROOM_UPDATED, payload);
+      io.to(`room:${dbRoom.id}`).emit(ROOM_UPDATED, payload);
     });
     socket.on(
       USER_JOIN_REQUEST_ACCEPT,
