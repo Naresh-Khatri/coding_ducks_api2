@@ -14,6 +14,7 @@ router.get("/all", [checkIfAdmin], roomsController.getAllRooms);
 router.get("/", roomsController.getPublicRooms);
 router.post("/", [checkIfAuthenticated], roomsController.createRoom);
 router.get("/:roomId", [checkIfUserAllowedInRoom], roomsController.getRoom);
+router.get("/:roomId/msgs", [checkIfUserAllowedInRoom], roomsController.getRoomMsgs);
 router.get(
   "/name/:roomname",
   [checkIfUserAllowedInRoom],

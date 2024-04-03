@@ -3,7 +3,6 @@ import prisma from "../lib/prisma";
 
 export const createRoom = async (req: Request, res: Response) => {
   try {
-    console.log(req.body);
     const { name, description, isPublic } = req.body;
     const { userId } = req.user;
 
@@ -18,7 +17,7 @@ export const createRoom = async (req: Request, res: Response) => {
 };
 export const getAllRooms = async (req: Request, res: Response) => {
   try {
-    const rooms = await prisma.room.findMany({});
+    const rooms = await prisma.room.findMany();
     res.json(rooms);
   } catch (err) {
     console.log(err);
@@ -59,6 +58,35 @@ export const getRoom = async (req: Request, res: Response) => {
       },
     });
     res.json(room);
+  } catch (err) {
+    console.log(err);
+    res.status(404).json({ message: "somethings wrong" });
+  }
+};
+export const getRoomMsgs = async (req: Request, res: Response) => {
+  const { roomId } = req.params;
+  try {
+    const msgs = await prisma.message.findMany({
+      where: {
+        roomId: +roomId,
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+    });
+
+    const foo = msgs.map((msg) => ({
+      user: {
+        id: msg.userId,
+        username: msg.username,
+        photoURL: msg.photoURL,
+      },
+      room: { id: msg.roomId },
+      text: msg.text,
+      updatedAt: msg.updatedAt,
+      time: msg.updatedAt,
+    }));
+    res.json({ data: foo || [] });
   } catch (err) {
     console.log(err);
     res.status(404).json({ message: "somethings wrong" });
