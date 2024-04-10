@@ -17,11 +17,12 @@ COPY yarn.lock .
 RUN yarn install
 
 COPY . .
-RUN npx prisma generate && \
-    mkdir -p dist/turbodrive/.tmp && \
+RUN mkdir -p dist/turbodrive/.tmp && \
     mkdir -p turbodrive/.tmp \
     mkdir -p dist/tmp/templates && \
     mkdir -p tmp/templates 
+
+RUN npx prisma generate && 
 
 RUN yarn build
 
