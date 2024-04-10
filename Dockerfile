@@ -9,11 +9,6 @@ RUN apt-get update && apt-get install -y \
     libc-dev \
     openjdk-17-jdk  
 
-RUN mkdir -p dist/turbodrive/.tmp && \
-    mkdir -p turbodrive/.tmp \
-    mkdir -p dist/tmp/templates && \
-    mkdir -p tmp/templates 
-
 WORKDIR /app
 
 COPY package.json .
@@ -22,8 +17,11 @@ COPY yarn.lock .
 RUN yarn install
 
 COPY . .
-
-RUN npx prisma generate
+RUN npx prisma generate && \
+    mkdir -p dist/turbodrive/.tmp && \
+    mkdir -p turbodrive/.tmp \
+    mkdir -p dist/tmp/templates && \
+    mkdir -p tmp/templates 
 
 RUN yarn build
 
