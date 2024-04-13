@@ -120,7 +120,7 @@ export const setupSocketIO = async (io: Server) => {
       const { user, room } = payload;
       const dbUser = await prisma.user.findFirst({ where: { id: user.id } });
       const dbRoom = await prisma.room.findFirst({
-        where: { id: room.id },
+        where: { id: +room.id },
         include: { allowedUsers: true },
       });
       if (!dbUser || !dbRoom) {
