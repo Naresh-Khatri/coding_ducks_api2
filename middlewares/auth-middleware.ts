@@ -108,7 +108,7 @@ export const checkIfAdmin = async (
   }
 };
 
-export const checkIfUserAllowedInRoom = async (
+export const checkRoleInRoom = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -129,15 +129,25 @@ export const checkIfUserAllowedInRoom = async (
         },
       },
     });
-    if (dbRoom?.isPublic) {
-      return next();
+    if (!dbRoom) {
+      return res.status(404).send({ message: "room not found!", code: 404 });
     }
 
     const authToken = getAuthToken(req);
     // console.log(req.headers.authorization);
+    /**
+     * USER NOT LOGGED IN
+     */
     if (!authToken) {
-      return res.status(404).send({ message: "unauthorized", code: 404 });
+      if (dbRoom.isPublic) {
+        req.roomRole = "guest";
+        return next();
+      } else {
+        req.roomRole = "none";
+        return res.status(409).send({ message: "unauthorized", code: 409 });
+      }
     }
+
     const decodedUser = await admin.auth().verifyIdToken(authToken);
     const dbUser = await prisma.user.findFirst({
       where: { googleUID: decodedUser.uid },
@@ -148,16 +158,35 @@ export const checkIfUserAllowedInRoom = async (
     if (!dbUser) {
       return res.status(404).send({ message: "user not found!", code: 404 });
     }
-    if (!dbRoom) {
-      return res.status(404).send({ message: "room not found!", code: 404 });
-    }
-    if (dbRoom?.ownerId === dbUser?.id) {
+    /**
+     * USER IS OWNER
+     */
+    if (dbRoom.ownerId === dbUser.id) {
+      req.roomRole = "owner";
       return next();
     }
-    if (dbRoom?.allowedUsers.some((user) => user.id === dbUser?.id)) {
+    /**
+     * USER IS ALLOWED IN ROOM
+     */
+    const userInAllowedList = dbRoom?.allowedUsers.some(
+      (user) => user.id === dbUser?.id
+    );
+    if (userInAllowedList) {
+      req.roomRole = "contributor";
       return next();
     }
-    return res.status(269).send({ message: "unauthorized", code: 269 });
+    /**
+     * USER IS NOT ALLOWED IN ROOM
+     */
+    if (!userInAllowedList) {
+      if (dbRoom.isPublic) {
+        req.roomRole = "guest";
+        return next();
+      } else {
+        req.roomRole = "requester";
+        return next();
+      }
+    }
   } catch (err: any) {
     // console.error(err);
     console.error(err.code);
@@ -192,7 +221,7 @@ export const checkIfUserIsOwnerOfRoom = async (
     if (dbRoom?.ownerId === req.user.userId) {
       return next();
     }
-    return res.status(409).send({ message: "unauthorized", code: 269 });
+    return res.status(409).send({ message: "unauthorized", code: 409 });
   } catch (err: any) {
     // console.error(err);
     console.error(err.code);

@@ -10,6 +10,7 @@ declare global {
   namespace Express {
     export interface Request {
       user: IUser;
+      roomRole?: "owner" | "contributor" | "requester" | "guest" | "none";
     }
   }
 }

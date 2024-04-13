@@ -57,7 +57,7 @@ export const getRoom = async (req: Request, res: Response) => {
         },
       },
     });
-    res.json(room);
+    res.json({ room, role: req.roomRole });
   } catch (err) {
     console.log(err);
     res.status(404).json({ message: "somethings wrong" });

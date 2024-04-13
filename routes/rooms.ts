@@ -3,7 +3,7 @@ import * as roomsController from "../controllers/rooms";
 import {
   checkIfAdmin,
   checkIfAuthenticated,
-  checkIfUserAllowedInRoom,
+  checkRoleInRoom,
   checkIfUserIsOwnerOfRoom,
 } from "../middlewares/auth-middleware";
 
@@ -13,11 +13,11 @@ const router = Router();
 router.get("/all", [checkIfAdmin], roomsController.getAllRooms);
 router.get("/", roomsController.getPublicRooms);
 router.post("/", [checkIfAuthenticated], roomsController.createRoom);
-router.get("/:roomId", [checkIfUserAllowedInRoom], roomsController.getRoom);
-router.get("/:roomId/msgs", [checkIfUserAllowedInRoom], roomsController.getRoomMsgs);
+router.get("/:roomId", [checkRoleInRoom], roomsController.getRoom);
+router.get("/:roomId/msgs", [checkRoleInRoom], roomsController.getRoomMsgs);
 router.get(
   "/name/:roomname",
-  [checkIfUserAllowedInRoom],
+  [checkRoleInRoom],
   roomsController.getRoomWithName
 );
 router.patch("/:roomId", [checkIfAuthenticated], roomsController.updateRoom);
