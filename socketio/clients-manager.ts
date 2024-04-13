@@ -38,7 +38,7 @@ const clientsStateManager = () => {
 
       // Add the user object to the array for the user ID
       clientMap.get(userId)?.push(_user);
-      console.log(clientMap);
+      // console.log(clientMap);
       return _user;
     },
     removeClient: (socketId: string) => {
