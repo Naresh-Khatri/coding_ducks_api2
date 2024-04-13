@@ -7,7 +7,7 @@
     "dev": "concurrently -r 'yarn dev:yjs-server' 'yarn dev:app'",
     "dev:app": "nodemon index.ts",
     "dev:yjs-server": "nodemon yjs/index.ts",
-    "build": "rimraf dist && swc . -d dist",
+    "build": "rimraf dist && swc . -d dist && mkdir -p dist/turbodrive/.tmp",
     "start": "yarn build && concurrently -r 'node dist/yjs/index.js' 'node dist/index.js'",
     "test": "vitest --ui"
   },
