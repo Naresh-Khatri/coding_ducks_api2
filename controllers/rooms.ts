@@ -57,6 +57,9 @@ export const getRoom = async (req: Request, res: Response) => {
         },
       },
     });
+    if (req.roomRole === "requester") {
+      return res.json({ room: { id: +roomId }, role: "requester" });
+    }
     res.json({ room, role: req.roomRole });
   } catch (err) {
     console.log(err);
