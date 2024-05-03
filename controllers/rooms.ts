@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "../lib/prisma";
+import nodeHtmlToImage from "node-html-to-image";
+import imageKit from "../imagekit/config";
 
 export const createRoom = async (req: Request, res: Response) => {
   try {
@@ -171,6 +173,7 @@ export const updateRoomContents = async (req: Request, res: Response) => {
         contentJS: js,
       },
     });
+    updatePreviewImage({ html, css, js, head }, +roomId);
     res.json(room);
   } catch (err) {
     console.log(err);
@@ -189,5 +192,45 @@ export const deleteRoom = async (req: Request, res: Response) => {
   } catch (err) {
     console.log(err);
     res.status(404).json({ message: "somethings wrong" });
+  }
+};
+
+const updatePreviewImage = async (
+  template: { html: string; css: string; js: string; head: string },
+  roomId: number
+) => {
+  const { css, head, html, js } = template;
+  const htmlTemplate = `<html><head>${head}</head>
+  <body>${html}</body>
+  <style>${css}</style>
+  <style>body{width:1280px; height: 720px; margin: 0; overflow: hidden;}</style>
+  <script>${js}</script>
+</html>`;
+
+  const image: Buffer = (await nodeHtmlToImage({
+    html: htmlTemplate,
+  })) as Buffer;
+  try {
+    await imageKit.createFolder({
+      parentFolderPath: "/coding_ducks/ducklet_previews",
+      folderName: String(roomId),
+    });
+
+    const result = await imageKit.upload({
+      file: image,
+      fileName: Date.now().toString(),
+      useUniqueFileName: false,
+      folder: "/coding_ducks/ducklet_previews/" + roomId,
+    });
+    await prisma.room.update({
+      where: {
+        id: roomId,
+      },
+      data: {
+        previewImage: result.url,
+      },
+    });
+  } catch (err) {
+    console.log(err);
   }
 };
