@@ -19,6 +19,7 @@ export interface ISocketRoom {
   isPublic?: boolean;
   lang?: Lang;
   content?: string;
+  previewImage?: string;
   ownerId?: number;
   createdAt?: Date;
   updatedAt?: Date;
