@@ -247,6 +247,7 @@ model Room {
   created_at   DateTime  @default(now()) @db.Timestamp(6)
   message      Message[]
   allowedUsers User[]    @relation("roomsAllowedForUser")
+  previewImage String?   @default("")
 
   contentHEAD String? @default("")
   contentHTML String? @default("")

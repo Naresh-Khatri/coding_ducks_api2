@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "Room" ADD COLUMN     "previewImage" TEXT DEFAULT '',
+ALTER COLUMN "contentCSS" SET DEFAULT '',
+ALTER COLUMN "contentHTML" SET DEFAULT '',
+ALTER COLUMN "contentJS" SET DEFAULT '',
+ALTER COLUMN "contentHEAD" SET DEFAULT '';
