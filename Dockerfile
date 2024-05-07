@@ -1,5 +1,6 @@
 FROM node:18 as base
 
+# core libs 
 RUN apt-get update && apt-get install -y \
     unzip \
     curl \
@@ -8,6 +9,9 @@ RUN apt-get update && apt-get install -y \
     g++ \
     libc-dev \
     openjdk-17-jdk  
+
+# For puppeteer
+RUN apt-get install -y libxkbcommon-x11-0 libgbm-dev
 
 WORKDIR /app
 
@@ -40,4 +44,3 @@ RUN yarn install --frozen-lockfile --production
 COPY --from=base /app/dist ./dist
 
 RUN npx prisma generate
-# CMD [ "echo", "start" ]
