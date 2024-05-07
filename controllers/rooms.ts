@@ -207,10 +207,11 @@ const updatePreviewImage = async (
   <script>${js}</script>
 </html>`;
 
-  const image: Buffer = (await nodeHtmlToImage({
-    html: htmlTemplate,
-  })) as Buffer;
   try {
+    const image: Buffer = (await nodeHtmlToImage({
+      html: htmlTemplate,
+      puppeteerArgs: { args: ["--no-sandbox"] },
+    })) as Buffer;
     await imageKit.createFolder({
       parentFolderPath: "/coding_ducks/ducklet_previews",
       folderName: String(roomId),
