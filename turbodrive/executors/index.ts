@@ -26,8 +26,8 @@ export const execute = async ({
     if (lang === "java") {
       // in case of java we get the entire path for object code
       // file to run as `dirPath`
-      const className = dirPath.split('/').at(-1)
-      dirPath = dirPath.split('/').slice(0, -1).join('/')
+      const className = dirPath.split("/").at(-1);
+      dirPath = dirPath.split("/").slice(0, -1).join("/");
       start = performance.now();
       c = spawn("java", [`-cp`, dirPath, className || ""], {
         ...options,
@@ -79,10 +79,10 @@ export const execute = async ({
       resolve(result);
     });
     c.stderr.on("data", async (data) => {
-      result.stderr = ("" + data).replace(new RegExp(dirPath, "g"), "...");
+      result.stderr += ("" + data).replace(new RegExp(dirPath, "g"), "...");
     });
     c.stdout.on("data", async (data) => {
-      result.stdout = ("" + data).replace(new RegExp(dirPath, "g"), "...");
+      result.stdout += ("" + data).replace(new RegExp(dirPath, "g"), "...");
     });
   });
 };
