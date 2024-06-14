@@ -2,6 +2,7 @@ import { createServer } from "http";
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
+import helmet from "helmet";
 
 import { Server } from "socket.io";
 
@@ -9,6 +10,7 @@ import usersRoute from "./routes/user";
 import filesRoute from "./routes/files";
 import codeRoute from "./routes/runCode";
 import examRoute from "./routes/exams";
+import challengeRoute from "./routes/ui-challenges";
 import roomRoute from "./routes/rooms";
 import problemsRoute from "./routes/problems";
 import playgroundRoute from "./routes/playground";
@@ -22,6 +24,7 @@ const PORT = Number(process.env.PORT || 3333);
 const app = express();
 
 app.use(allowCORS);
+app.use(helmet());
 app.use(express.json());
 app.use(morgan("dev"));
 app.use(cors({ origin: true, credentials: true }));
@@ -37,6 +40,7 @@ app.use("/users", usersRoute);
 app.use("/rooms", roomRoute);
 app.use("/files", filesRoute);
 app.use("/exams", examRoute);
+app.use("/ui-challenges", challengeRoute);
 app.use("/problems", problemsRoute);
 app.use("/playground", playgroundRoute);
 app.use("/submissions", submissionsRoute);
