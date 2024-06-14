@@ -433,7 +433,7 @@ export const submitAttempt = async (req: Request, res: Response) => {
 
     // store images locally then call python script
     const uuid = randomUUID();
-    const _path = path.join(__dirname, "..", "python", "tmp", uuid);
+    const _path = path.join(__dirname, "..", "SSIM", "tmp", uuid);
     console.log(uuid, _path);
     await mkdir(_path, {
       recursive: true,
