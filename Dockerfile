@@ -10,8 +10,9 @@ RUN apt-get update && apt-get install -y \
     libc-dev \
     openjdk-17-jdk  
 
-# For puppeteer
-RUN apt-get install -y libxkbcommon-x11-0 libgbm-dev
+# For puppeteer and SSIM
+RUN apt-get install -y libxkbcommon-x11-0 libgbm-dev\
+    python3-skimage python3-opencv
 
 WORKDIR /app
 
