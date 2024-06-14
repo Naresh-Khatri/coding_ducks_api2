@@ -235,3 +235,36 @@ export const checkIfUserIsOwnerOfRoom = async (
     }
   }
 };
+export const checkIfUserIsAttemptOwner = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { attemptId } = req.params;
+    const dbUserAttempt = await prisma.challengeAttempt.findFirst({
+      where: {
+        id: +attemptId,
+      },
+      select: {
+        userId: true,
+      },
+    });
+
+    if (dbUserAttempt?.userId === req.user.userId) {
+      return next();
+    }
+    return res.status(409).send({ message: "unauthorized", code: 409 });
+  } catch (err: any) {
+    console.error(err);
+    console.error(err.code);
+    if (err.code === "auth/argument-error") {
+      console.log("You have not provided a token.");
+      return res.status(401).send({ message: "unauthorized", code: 401 });
+    } else if (err.code === "auth/id-token-expired") {
+      return res.status(401).send({ message: "token expired", code: 401 });
+    } else {
+      return res.status(500).send({ message: "Internal Server Error" });
+    }
+  }
+};
