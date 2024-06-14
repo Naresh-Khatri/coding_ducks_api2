@@ -23,6 +23,7 @@
     "express": "^4.17.1",
     "express-fileupload": "^1.4.0",
     "firebase-admin": "^11.3.0",
+    "helmet": "^7.1.0",
     "imagekit": "^4.1.2",
     "lib0": "^0.2.90",
     "lodash.debounce": "^4.0.8",
