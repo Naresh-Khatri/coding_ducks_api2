@@ -6,7 +6,7 @@ import os
 
 [foo, dirname] = sys.argv
 
-base_path = os.path.join("python", "tmp", dirname)
+base_path = os.path.join("SSIM", "tmp", dirname)
 
 before = cv2.imread(os.path.join(base_path, "target.png"))
 after = cv2.imread(os.path.join(base_path, "code.png"))
