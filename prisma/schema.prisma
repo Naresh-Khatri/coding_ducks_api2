@@ -309,7 +309,7 @@ model ChallengeAttempt {
 
   contentHEAD String @default("")
   contentHTML String @default("<div class=\"main\"> Hello from coding ducks! </div>")
-  contentCSS  String @default("body{\n  margin: 0px;\n  height: 100dvh;\n  display: flex;\n  justify-content: center;\n  align-items: center;}")
+  contentCSS  String @default("body{\n  margin: 0px;\n  height: 100dvh;\n  background-color: white;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}")
   contentJS   String @default("// write your js here")
 
   imgCode        String? @default("")
