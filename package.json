@@ -28,6 +28,7 @@
     "lodash.debounce": "^4.0.8",
     "morgan": "^1.10.0",
     "node-html-to-image": "^4.0.0",
+    "python-shell": "^5.0.0",
     "socket.io": "^4.6.1",
     "vitest": "^0.34.5",
     "y-mongodb": "^0.1.11",
