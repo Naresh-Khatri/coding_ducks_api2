@@ -7,8 +7,8 @@ const router = Router();
 router.use(fileUpload());
 
 router.get('/', userController.getUsers);
-router.get('/:userId/rooms', userController.getUserRooms);
 router.get('/:gid', userController.getUser);
+router.get('/:userId/rooms', userController.getUserRooms);
 router.get('/username/:username/stats', userController.getUserStats);
 router.get('/username/:username', userController.getUserUsingUsername);
 router.get('/search/username/:username', userController.getSearchUser);
