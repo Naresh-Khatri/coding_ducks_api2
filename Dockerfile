@@ -26,7 +26,8 @@ RUN npx prisma generate && \
     mkdir -p dist/turbodrive/.tmp && \
     mkdir -p turbodrive/.tmp \
     mkdir -p dist/tmp/templates && \
-    mkdir -p tmp/templates 
+    mkdir -p tmp/templates \
+    mkdir -p SSIM/tmp 
 
 RUN yarn build
 
