@@ -21,6 +21,14 @@ enum RoomType {
   normal
 }
 
+enum ChallengeDiff {
+  newbie
+  junior
+  intermediate
+  advanced
+  master
+}
+
 model User {
   id           Int       @id @default(autoincrement())
   fullname     String    @db.VarChar(100)
@@ -54,11 +62,13 @@ model User {
   roomsCreated Room[]     @relation(name: "roomOwner")
   Feedbacks    Feedback[]
 
-  createdAt      DateTime      @default(now()) @db.Timestamp(6)
-  updatedAt      DateTime      @updatedAt @db.Timestamp(6)
-  fileDeltas     FileHistory[]
-  Directories    Directory[]
-  roomsAllowedIn Room[]        @relation("roomsAllowedForUser")
+  createdAt        DateTime           @default(now()) @db.Timestamp(6)
+  updatedAt        DateTime           @updatedAt @db.Timestamp(6)
+  fileDeltas       FileHistory[]
+  Directories      Directory[]
+  roomsAllowedIn   Room[]             @relation("roomsAllowedForUser")
+  Challenge        Challenge[]
+  ChallengeAttempt ChallengeAttempt[]
 }
 
 model Directory {
@@ -260,15 +270,75 @@ model Room {
   Directory Directory[]
 }
 
+// TODO: add startercode for each challenge
+model Challenge {
+  id          Int           @id @default(autoincrement())
+  title       String        @default("")
+  description String?       @default("")
+  isPublic    Boolean       @default(true)
+  slug        String        @unique
+  difficulty  ChallengeDiff
+
+  contentHEAD String @default("")
+  contentHTML String @default("")
+  contentCSS  String @default("")
+  contentJS   String @default("")
+
+  mobilePreview  String
+  desktopPreview String
+  creatorId      Int
+  creator        User   @relation(fields: [creatorId], references: [id])
+
+  createdAt        DateTime           @default(now()) @db.Timestamp(6)
+  updatedAt        DateTime           @updatedAt @db.Timestamp(6)
+  ChallengeAttempt ChallengeAttempt[]
+}
+
+enum ChallengeStatus {
+  submitted
+  notSubmitted
+}
+
+model ChallengeAttempt {
+  id          Int       @id @default(autoincrement())
+  challengeId Int
+  challenge   Challenge @relation(fields: [challengeId], references: [id])
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  contentHEAD String @default("")
+  contentHTML String @default("<div class=\"main\"> Hello from coding ducks! </div>")
+  contentCSS  String @default("body{\n  margin: 0px;\n  height: 100dvh;\n  display: flex;\n  justify-content: center;\n  align-items: center;}")
+  contentJS   String @default("// write your js here")
+
+  imgCode        String? @default("")
+  imgTarget      String? @default("")
+  imgBefore      String? @default("")
+  imgAfter       String? @default("")
+  imgDiff        String? @default("")
+  imgFilledAfter String? @default("")
+  imgMask        String? @default("")
+  ogImage        String? @default("")
+
+  isPublic Boolean         @default(true)
+  status   ChallengeStatus @default(notSubmitted)
+  score    Int             @default(0)
+
+  lastSubmitted DateTime? @db.Timestamp(6)
+  createdAt     DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime  @updatedAt @db.Timestamp(6)
+}
+
 // TODO: normalize this shit
 model Message {
   id       Int      @id @default(autoincrement())
   username String
   photoURL String
   text     String
-  room     Room     @relation(fields: [roomId], references: [id])
+  room     Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
   roomId   Int
-  user     User     @relation(fields: [userId], references: [id])
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId   Int
   time     DateTime @default(now()) @db.Timestamp(6)
 

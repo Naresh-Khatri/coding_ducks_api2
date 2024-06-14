@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Challenge" ADD COLUMN     "contentCSS" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "contentHEAD" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "contentHTML" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "contentJS" TEXT NOT NULL DEFAULT '';
