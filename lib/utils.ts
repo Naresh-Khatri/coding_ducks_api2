@@ -48,3 +48,67 @@ export const generateTree = ({
   };
   console.log(foo);
 };
+
+// TODO: add <head> support
+export const generateHtmlString = ({
+  html,
+  css,
+  js,
+  isMobile = false,
+}: {
+  html: string;
+  css: string;
+  js: string;
+  isMobile: boolean;
+}) => {
+  return `<html>
+  <body>${html}</body>
+  <style>${css}</style>
+  <style>body{width:${isMobile ? "360px" : "1280px"}; height: ${
+    isMobile ? "height: 640px" : "720px"
+  }; margin: 0; overflow: hidden;}</style>
+  <script>${js}</script>
+</html>`;
+};
+export const generateOGHtmlString = ({
+  html,
+  css,
+  js,
+}: {
+  html: string;
+  css: string;
+  js: string;
+}) => {
+  const bodyStyles = [
+    "width: 1200px",
+    "height: 630px",
+    "margin: 0",
+    "padding: 150px",
+    "background-color: #4158D0",
+    "background-image: linear-gradient(43deg, #4158D0 0%, #C850C0 46%, #FFCC70 100%)",
+  ];
+  const srcDoc = `<html>
+<body>${html}</body>
+<style>${css}</style>
+<script>${js}</script>
+</html> `;
+
+  return `
+  <html>
+    <body style="${bodyStyles.join("; ")}">
+      <iframe
+        title="output"
+        sandbox="allow-scripts"
+        width="100%"
+        height="100%"
+        style="border: none; border-radius: 20px; box-shadow: rgba(0, 0, 0, 0.6) 0px 25px 50px -12px;"
+        srcDoc="${srcDoc
+          .replaceAll(/\n/g, "")
+          .replaceAll(/"/g, "&#34;")
+          .replaceAll(/'/g, "&#39;")}"
+      >
+      </iframe>
+    </body>
+  </html>
+`;
+};
