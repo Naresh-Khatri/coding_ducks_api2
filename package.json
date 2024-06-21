@@ -14,7 +14,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@prisma/client": "4.3.1",
+    "@prisma/client": "5",
     "axios": "^0.27.2",
     "compile-code": "^1.1.1",
     "compile-run": "^2.3.4",
@@ -50,7 +50,7 @@
     "@vitest/ui": "^0.34.5",
     "concurrently": "^8.2.2",
     "nodemon": "^3.0.3",
-    "prisma": "4.3.1",
+    "prisma": "5",
     "rimraf": "^5.0.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.0.4"
