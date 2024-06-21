@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y \
 
 # For puppeteer and FSIM
 RUN apt-get install -y libxkbcommon-x11-0 libgbm-dev\
-    python3-skimage python3-opencv image-similarity-measures
+    python3-skimage python3-opencv python3-image-similarity-measures
 
 
 WORKDIR /app
