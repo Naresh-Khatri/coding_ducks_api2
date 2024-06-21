@@ -10,9 +10,10 @@ RUN apt-get update && apt-get install -y \
     libc-dev \
     openjdk-17-jdk  
 
-# For puppeteer and SSIM
+# For puppeteer and FSIM
 RUN apt-get install -y libxkbcommon-x11-0 libgbm-dev\
-    python3-skimage python3-opencv
+    python3-skimage python3-opencv image-similarity-measures
+
 
 WORKDIR /app
 
@@ -27,7 +28,7 @@ RUN npx prisma generate && \
     mkdir -p turbodrive/.tmp \
     mkdir -p dist/tmp/templates && \
     mkdir -p tmp/templates \
-    mkdir -p SSIM/tmp 
+    mkdir -p FSIM/tmp 
 
 RUN yarn build
 
