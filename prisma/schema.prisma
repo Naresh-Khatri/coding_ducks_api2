@@ -272,12 +272,13 @@ model Room {
 
 // TODO: add startercode for each challenge
 model Challenge {
-  id          Int           @id @default(autoincrement())
-  title       String        @default("")
-  description String?       @default("")
-  isPublic    Boolean       @default(true)
-  slug        String        @unique
-  difficulty  ChallengeDiff
+  id           Int           @id @default(autoincrement())
+  title        String        @default("")
+  description  String?       @default("")
+  isPublic     Boolean       @default(true)
+  slug         String        @unique
+  difficulty   ChallengeDiff
+  ogImageScale Int           @default(1)
 
   contentHEAD String @default("")
   contentHTML String @default("")
@@ -286,8 +287,9 @@ model Challenge {
 
   mobilePreview  String
   desktopPreview String
+  ogImage        String? @default("")
   creatorId      Int
-  creator        User   @relation(fields: [creatorId], references: [id])
+  creator        User    @relation(fields: [creatorId], references: [id])
 
   createdAt        DateTime           @default(now()) @db.Timestamp(6)
   updatedAt        DateTime           @updatedAt @db.Timestamp(6)
