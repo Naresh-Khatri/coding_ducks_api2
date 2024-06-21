@@ -1,5 +1,7 @@
 FROM node:18 as base
 
+SHELL ["/bin/bash", "-c"]
+
 # core libs 
 RUN apt-get update && apt-get install -y \
     unzip \
@@ -11,8 +13,9 @@ RUN apt-get update && apt-get install -y \
     openjdk-17-jdk  
 
 # For puppeteer and FSIM
-RUN apt-get install -y libxkbcommon-x11-0 libgbm-dev\
-    python3-skimage python3-opencv python3-image-similarity-measures
+RUN apt-get install -y libxkbcommon-x11-0 libgbm-dev python3-virtualenv
+RUN virtualenv env && source env/bin/activate && pip install opencv-python scikit-image image-similarity-measures
+
 
 
 WORKDIR /app
