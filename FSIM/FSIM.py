@@ -1,12 +1,17 @@
-from skimage.metrics import structural_similarity
-import cv2
-import numpy as np
 import sys
 import os
+import cv2
+import numpy as np
+from skimage.metrics import structural_similarity
+# from image_similarity_measures.evaluate import evaluation
+from image_similarity_measures.quality_metrics import fsim
+from time import perf_counter
+
+start = perf_counter()
 
 [foo, dirname] = sys.argv
 
-base_path = os.path.join("SSIM", "tmp", dirname)
+base_path = os.path.join("FSIM", "tmp", dirname)
 
 before = cv2.imread(os.path.join(base_path, "target.png"))
 after = cv2.imread(os.path.join(base_path, "code.png"))
@@ -15,9 +20,12 @@ after = cv2.imread(os.path.join(base_path, "code.png"))
 before_gray = cv2.cvtColor(before, cv2.COLOR_BGR2GRAY)
 after_gray = cv2.cvtColor(after, cv2.COLOR_BGR2GRAY)
 
+# Compute FSIM score between two images
+score = fsim(org_img=before, pred_img=after)
+print("FSIM:", score)
+
 # Compute SSIM between two images
-(score, diff) = structural_similarity(before_gray, after_gray, full=True)
-print("SSIM:", score)
+(_, diff) = structural_similarity(before_gray, after_gray, full=True)
 
 # The diff image contains the actual image differences between the two images
 # and is represented as a floating point data type in the range [0,1]
@@ -38,8 +46,8 @@ for c in contours:
     area = cv2.contourArea(c)
     if area > 40:
         x, y, w, h = cv2.boundingRect(c)
-        cv2.rectangle(before, (x, y), (x + w, y + h), (36, 255, 12), 2)
-        cv2.rectangle(after, (x, y), (x + w, y + h), (36, 255, 12), 2)
+        cv2.rectangle(before, (x, y), (x + w, y + h), (36, 12, 255), 1)
+        cv2.rectangle(after, (x, y), (x + w, y + h), (36, 12, 255), 1)
         cv2.drawContours(mask, [c], 0, (0, 255, 0), -1)
         cv2.drawContours(filled_after, [c], 0, (0, 255, 0), -1)
 

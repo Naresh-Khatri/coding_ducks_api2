@@ -1,12 +1,12 @@
 import { UUID } from "crypto";
 import { PythonShell } from "python-shell";
 
-export const runSSIM = async (
+export const runFSIM = async (
   uuid: UUID
 ): Promise<{ score: string; files: string[] }> => {
   return new Promise((resolve, reject) => {
     let score = "";
-    const pyShell = new PythonShell("SSIM/SSIM.py", {
+    const pyShell = new PythonShell("FSIM/FSIM.py", {
       args: [uuid],
     });
     pyShell.on("error", function (message) {
@@ -23,7 +23,7 @@ export const runSSIM = async (
     });
     pyShell.on("message", function (message: string) {
       console.log("msg", message);
-      if (message.includes("SSIM"))
+      if (message.includes("FSIM"))
         score = parseFloat(message.split(" ")[1]).toString();
     });
     pyShell.on("close", () => {
