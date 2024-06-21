@@ -1,24 +1,23 @@
+import https from "node:https";
 import { Request, Response } from "express";
 import imageKit from "../imagekit/config";
 import prisma from "../lib/prisma";
 import nodeHtmlToImage from "node-html-to-image";
 import { generateHtmlString, generateOGHtmlString } from "../lib/utils";
 import { randomUUID } from "crypto";
-import { mkdir, readFile, rmdir, writeFile } from "fs/promises";
+import { mkdir, readFile, rm, writeFile } from "fs/promises";
 import path from "path";
-import { runSSIM } from "../SSIM";
+import { runFSIM } from "../FSIM";
+import axios from "axios";
+import { performance } from "node:perf_hooks";
 
 // -----------------ADMIN STUFF_----------------
 export const getAllChallenges = async (req: Request, res: Response) => {
   try {
     let challenges;
-    if (req.user?.isAdmin)
-      challenges = await prisma.challenge.findMany({
-        orderBy: { id: "desc" },
-      });
+    if (req.user?.isAdmin) challenges = await prisma.challenge.findMany();
     else
       challenges = await prisma.challenge.findMany({
-        orderBy: { id: "desc" },
         where: { isPublic: true },
       });
     res.status(200).json({ status: "success", data: challenges });
@@ -40,8 +39,6 @@ export const getChallenge = async (req: Request, res: Response) => {
       // otherwise its a slug
       where.slug = idOrSlug;
     }
-    ``;
-
     const challenge = await prisma.challenge.findFirst({
       where: where,
       include: {
@@ -70,10 +67,34 @@ export const getChallenge = async (req: Request, res: Response) => {
     res.status(404).json({ message: "somethings wrong" });
   }
 };
+
+export const getAttempts = async (req: Request, res: Response) => {
+  try {
+    const { challengeId } = req.params;
+    const challengeAttempts = await prisma.challengeAttempt.findMany({
+      where: { challengeId: +challengeId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            photoURL: true,
+            fullname: true,
+          },
+        },
+      },
+      orderBy: { score: "desc" },
+    });
+    res.status(200).json({ status: "success", data: challengeAttempts });
+  } catch (err) {
+    console.log(err);
+    res.status(404).json({ message: "somethings wrong" });
+  }
+};
+
 export const createChallenge = async (req: Request, res: Response) => {
   // console.log(req.user)
   // return res.status(200).json({ message: "success" });
-  console.log(req.body);
   const {
     head,
     html,
@@ -84,6 +105,7 @@ export const createChallenge = async (req: Request, res: Response) => {
     difficulty,
     description,
     isPublic,
+    ogImageScale,
   } = req.body;
   const mobileHtmlTemplate = generateHtmlString({
     html,
@@ -97,6 +119,14 @@ export const createChallenge = async (req: Request, res: Response) => {
     js,
     isMobile: false,
   });
+  const ogImageTemplate = generateOGHtmlString(
+    {
+      html,
+      css,
+      js,
+    },
+    +ogImageScale === 0 ? 1 : +ogImageScale
+  );
 
   try {
     await imageKit.createFolder({
@@ -104,7 +134,7 @@ export const createChallenge = async (req: Request, res: Response) => {
       folderName: String(slug),
     });
 
-    const [mobileImage, desktopImage] = await Promise.all([
+    const [mobileImage, desktopImage, ogImage] = await Promise.all([
       nodeHtmlToImage({
         html: mobileHtmlTemplate,
         puppeteerArgs: { args: ["--no-sandbox"] },
@@ -113,19 +143,29 @@ export const createChallenge = async (req: Request, res: Response) => {
         html: desktopHtmlTemplate,
         puppeteerArgs: { args: ["--no-sandbox"] },
       }) as Promise<Buffer>,
+      nodeHtmlToImage({
+        html: ogImageTemplate,
+        puppeteerArgs: { args: ["--no-sandbox"] },
+      }) as Promise<Buffer>,
     ]);
-    const [mobileImageuploaded, desktopImageUploaded] = await Promise.all([
-      imageKit.upload({
-        file: mobileImage,
-        fileName: "mobile.png",
-        folder: "/coding_ducks/ui-challenges/" + slug,
-      }),
-      imageKit.upload({
-        file: desktopImage,
-        fileName: "desktop.png",
-        folder: "/coding_ducks/ui-challenges/" + slug,
-      }),
-    ]);
+    const [mobileImageuploaded, desktopImageUploaded, ogImageUploaded] =
+      await Promise.all([
+        imageKit.upload({
+          file: mobileImage,
+          fileName: "mobile.png",
+          folder: "/coding_ducks/ui-challenges/" + slug,
+        }),
+        imageKit.upload({
+          file: desktopImage,
+          fileName: "desktop.png",
+          folder: "/coding_ducks/ui-challenges/" + slug,
+        }),
+        imageKit.upload({
+          file: ogImage,
+          fileName: "og-image.png",
+          folder: "/coding_ducks/ui-challenges/" + slug,
+        }),
+      ]);
     // console.log(mobileImageuploaded, desktopImageUploaded);
     const newChallenge = await prisma.challenge.create({
       data: {
@@ -140,6 +180,7 @@ export const createChallenge = async (req: Request, res: Response) => {
         contentJS: js,
         desktopPreview: desktopImageUploaded.url,
         mobilePreview: mobileImageuploaded.url,
+        ogImage: ogImageUploaded.url,
         creator: { connect: { id: req.user?.userId } },
       },
     });
@@ -161,6 +202,7 @@ export const updateChallenge = async (req: Request, res: Response) => {
     difficulty,
     description,
     isPublic,
+    ogImageScale,
   } = req.body;
   const mobileHtmlTemplate = generateHtmlString({
     html,
@@ -174,6 +216,14 @@ export const updateChallenge = async (req: Request, res: Response) => {
     js,
     isMobile: false,
   });
+  const ogImageTemplate = generateOGHtmlString(
+    {
+      html,
+      css,
+      js,
+    },
+    +ogImageScale === 0 ? 1 : +ogImageScale
+  );
 
   try {
     const updatedData: any = {
@@ -182,9 +232,17 @@ export const updateChallenge = async (req: Request, res: Response) => {
       description,
       difficulty,
       isPublic,
+      ogImageScale: +ogImageScale === 0 ? 1 : +ogImageScale,
     };
     const dbChallenge = await prisma.challenge.findFirst({
       where: { id: +req.params.challengeId },
+      select: {
+        contentHEAD: true,
+        contentCSS: true,
+        contentHTML: true,
+        contentJS: true,
+        ogImageScale: true,
+      },
     });
     if (!dbChallenge)
       return res.status(404).json({ message: "challenge not found" });
@@ -193,14 +251,16 @@ export const updateChallenge = async (req: Request, res: Response) => {
       contentHEAD !== head ||
       contentHTML !== html ||
       contentCSS !== css ||
-      contentJS !== js
+      contentJS !== js ||
+      dbChallenge.ogImageScale !== +ogImageScale
     ) {
+      //  await imageKit.deleteFolder(`/coding_ducks/ui-challenges/${slug}`);
       await imageKit.createFolder({
         parentFolderPath: "/coding_ducks/ui-challenges",
         folderName: String(slug),
       });
 
-      const [mobileImage, desktopImage] = await Promise.all([
+      const [mobileImage, desktopImage, ogImage] = await Promise.all([
         nodeHtmlToImage({
           html: mobileHtmlTemplate,
           puppeteerArgs: { args: ["--no-sandbox"] },
@@ -209,25 +269,38 @@ export const updateChallenge = async (req: Request, res: Response) => {
           html: desktopHtmlTemplate,
           puppeteerArgs: { args: ["--no-sandbox"] },
         }) as Promise<Buffer>,
+        nodeHtmlToImage({
+          html: ogImageTemplate,
+          puppeteerArgs: { args: ["--no-sandbox"] },
+        }) as Promise<Buffer>,
       ]);
-      const [mobileImageuploaded, desktopImageUploaded] = await Promise.all([
-        imageKit.upload({
-          file: mobileImage,
-          fileName: "mobile.png",
-          folder: "/coding_ducks/ui-challenges/" + slug,
-        }),
-        imageKit.upload({
-          file: desktopImage,
-          fileName: "desktop.png",
-          folder: "/coding_ducks/ui-challenges/" + slug,
-        }),
-      ]);
+      const [mobileImageuploaded, desktopImageUploaded, ogImageUploaded] =
+        await Promise.all([
+          imageKit.upload({
+            file: mobileImage,
+            fileName: "mobile.png",
+            folder: "/coding_ducks/ui-challenges/" + slug,
+          }),
+          imageKit.upload({
+            file: desktopImage,
+            fileName: "desktop.png",
+            folder: "/coding_ducks/ui-challenges/" + slug,
+          }),
+          imageKit.upload({
+            file: ogImage,
+            fileName: "og-image.png",
+            folder: "/coding_ducks/ui-challenges/" + slug,
+          }),
+        ]);
+      console.log(ogImageUploaded);
       updatedData["contentHEAD"] = head;
       updatedData["contentHTML"] = html;
       updatedData["contentCSS"] = css;
       updatedData["contentJS"] = js;
+      updatedData["ogImageScale"] = ogImageScale;
       updatedData["desktopPreview"] = desktopImageUploaded.url;
       updatedData["mobilePreview"] = mobileImageuploaded.url;
+      updatedData["ogImage"] = ogImageUploaded.url;
     }
     const updatedChallenge = await prisma.challenge.update({
       where: { id: +req.params.challengeId },
@@ -240,15 +313,95 @@ export const updateChallenge = async (req: Request, res: Response) => {
   }
 };
 
+export const recalculateChallengeAttempts = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { challengeId, attemptId } = req.body;
+    console.log(challengeId, attemptId);
+    const challenge = await prisma.challenge.findUnique({
+      where: { id: +challengeId },
+      select: {
+        id: true,
+        ChallengeAttempt: !attemptId ?? {
+          select: {
+            id: true,
+            imgCode: true,
+          },
+        },
+        contentHEAD: true,
+        contentHTML: true,
+        contentCSS: true,
+        contentJS: true,
+        ogImageScale: true,
+        desktopPreview: true,
+      },
+    });
+    if (!challenge)
+      return res.status(404).json({ message: "challenge not found" });
+    console.log("started recalculating for challenge " + challenge.id);
+
+    const targetImage = await axios.get(challenge.desktopPreview, {
+      responseType: "arraybuffer",
+    });
+
+    let attempts;
+    if (attemptId) {
+      const attempt = await prisma.challengeAttempt.findUnique({
+        where: { id: +attemptId },
+        select: {
+          id: true,
+          imgCode: true,
+        },
+      });
+      attempts = [attempt];
+    } else {
+      attempts = challenge.ChallengeAttempt;
+    }
+    const result = [];
+    for (let i = 0; i < attempts.length; i++) {
+      if (!attempts[i] || !attempts[i]?.imgCode) continue;
+      const uuid = randomUUID();
+      const _path = path.join(__dirname, "..", "FSIM", "tmp", uuid);
+      await mkdir(_path, {
+        recursive: true,
+      });
+      // @ts-ignore
+      const codeImage = await axios.get(attempts[i].imgCode, {
+        responseType: "arraybuffer",
+      });
+      await Promise.all([
+        writeFile(path.join(_path, "target.png"), targetImage.data),
+        writeFile(path.join(_path, "code.png"), codeImage.data),
+      ]);
+
+      const { score } = await runFSIM(uuid);
+      console.log("score", attempts[i]?.id, attempts[i]?.imgCode, score);
+      result.push(
+        await prisma.challengeAttempt.update({
+          where: { id: attempts[i]?.id },
+          data: {
+            score: parseInt((+score * 1000).toString()),
+          },
+        })
+      );
+    }
+    res.status(200).json({ message: "done", data: result });
+  } catch (err) {
+    console.log(err);
+    res.status(404).json({ message: "somethings wrong" });
+  }
+};
 export const deleteChallenge = async (req: Request, res: Response) => {
   try {
     const challenge = await prisma.challenge.findUnique({
       where: { id: +req.params.challengeId },
     });
     // delete image from imagekit
-    await imageKit.deleteFolder(
-      "/coding_ducks/ui-challenges/" + challenge?.slug
-    );
+    // await imageKit.deleteFolder(
+    //   "/coding_ducks/ui-challenges/" + challenge?.slug
+    // );
     const deletedChallenge = await prisma.challenge.delete({
       where: {
         id: +req.params.challengeId,
@@ -300,7 +453,7 @@ export const getAttempt = async (req: Request, res: Response) => {
     res.status(404).json({ message: "somethings wrong" });
   }
 };
-export const getAttempts = async (req: Request, res: Response) => {
+export const getHighScores = async (req: Request, res: Response) => {
   try {
     const { challengeId } = req.params;
     const { userId } = req.query;
@@ -371,8 +524,11 @@ export const getAttempts = async (req: Request, res: Response) => {
 };
 export const submitAttempt = async (req: Request, res: Response) => {
   try {
+    const start = performance.now();
     const { challengeId } = req.params;
     const { head, html, css, js } = req.body;
+    console.log((performance.now() - start) / 1000, "fetching challenge");
+
     const challenge = await prisma.challenge.findFirst({
       where: { id: +challengeId },
       select: {
@@ -381,11 +537,13 @@ export const submitAttempt = async (req: Request, res: Response) => {
         contentHTML: true,
         contentCSS: true,
         contentJS: true,
+        ogImageScale: true,
       },
     });
     if (!challenge) {
       return res.status(404).json({ message: "challenge not found" });
     }
+    console.log((performance.now() - start) / 1000, "generating htmls");
     const codeTemplate = generateHtmlString({
       html,
       css,
@@ -398,12 +556,17 @@ export const submitAttempt = async (req: Request, res: Response) => {
       js: challenge?.contentJS,
       isMobile: false,
     });
-    const ogImageTemplate = generateOGHtmlString({
-      html: html,
-      css: css,
-      js: js,
-    });
+    const ogImageTemplate = generateOGHtmlString(
+      {
+        html: html,
+        css: css,
+        js: js,
+      },
+      challenge.ogImageScale === 0 ? 1 : +challenge.ogImageScale
+    );
+    // console.log(ogImageTemplate);
 
+    console.log((performance.now() - start) / 1000, "taking ss");
     // take both images and compare
     const [codeImageBuffer, targetImageBuffer, ogImageBuffer] =
       await Promise.all([
@@ -421,6 +584,7 @@ export const submitAttempt = async (req: Request, res: Response) => {
         }) as Promise<Buffer>,
       ]);
 
+    console.log((performance.now() - start) / 1000, "creating dirs");
     // create attempt directory for user
     await imageKit.createFolder({
       parentFolderPath: "/coding_ducks/ui-challenges/",
@@ -431,20 +595,23 @@ export const submitAttempt = async (req: Request, res: Response) => {
       folderName: String(req.user.userId),
     });
 
+    console.log((performance.now() - start) / 1000, "creating path");
     // store images locally then call python script
     const uuid = randomUUID();
-    const _path = path.join(__dirname, "..", "SSIM", "tmp", uuid);
+    const _path = path.join(__dirname, "..", "FSIM", "tmp", uuid);
     console.log(uuid, _path);
     await mkdir(_path, {
       recursive: true,
     });
+    console.log((performance.now() - start) / 1000, "writing files");
     await Promise.all([
       writeFile(path.join(_path, "target.png"), targetImageBuffer),
       writeFile(path.join(_path, "code.png"), codeImageBuffer),
       writeFile(path.join(_path, "og.png"), ogImageBuffer),
     ]);
 
-    const { files, score } = await runSSIM(uuid);
+    console.log((performance.now() - start) / 1000, "init FSIM");
+    const { files, score } = await runFSIM(uuid);
     const imgkitDirname = `/coding_ducks/ui-challenges/${challenge.slug}/attempts/${req.user?.userId}`;
     const result = await Promise.all(
       files.map(async (fileName) =>
@@ -455,14 +622,13 @@ export const submitAttempt = async (req: Request, res: Response) => {
         })
       )
     );
-    await rmdir(_path, { recursive: true });
+    console.log((performance.now() - start) / 1000, "updaing db");
     const newAttempt = await prisma.challengeAttempt.create({
       data: {
         challenge: { connect: { id: +challengeId } },
         user: { connect: { id: req.user.userId } },
         status: "submitted",
         lastSubmitted: new Date().toISOString(),
-
         contentHEAD: head,
         contentHTML: html,
         contentCSS: css,
@@ -482,8 +648,11 @@ export const submitAttempt = async (req: Request, res: Response) => {
         challenge: { select: { id: true, slug: true, title: true } },
       },
     });
+    console.log((performance.now() - start) / 1000, "sending res");
     //TODO: also upload an HD image later
     res.status(200).json({ status: "success", data: newAttempt });
+    console.log((performance.now() - start) / 1000, "cleaning up");
+    await rm(_path, { recursive: true });
   } catch (err) {
     console.log(err);
     res.status(404).json({ message: "somethings wrong" });

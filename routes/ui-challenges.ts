@@ -14,7 +14,7 @@ const router = Router();
 router.get("/", [addUserToRequest], challengesController.getAllChallenges);
 router.get("/:idOrSlug", challengesController.getChallenge);
 
-router.get("/:challengeId/attempts", challengesController.getAttempts);
+router.get("/:challengeId/highscores", challengesController.getHighScores);
 router.get(
   "/:challengeSlug/attempts/:attemptId",
   challengesController.getAttempt
@@ -40,6 +40,16 @@ router.post(
   "/",
   [checkIfAuthenticated, checkIfAdmin],
   challengesController.createChallenge
+);
+router.get(
+  "/:challengeId/attempts",
+  [checkIfAuthenticated, checkIfAdmin],
+  challengesController.getAttempts
+);
+router.post(
+  "/recalculate-scores",
+  [checkIfAuthenticated, checkIfAdmin],
+  challengesController.recalculateChallengeAttempts
 );
 router.patch(
   "/:challengeId",
