@@ -1,7 +1,7 @@
 version: "3.7"
 
 services:
-  app:
+  dev:
     build:
       context: .
       dockerfile: Dockerfile
@@ -16,4 +16,4 @@ services:
     ports:
       - "3333:3333"
       - "3334:3334"
-    command: yarn start
+    command: yarn dev
