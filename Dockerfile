@@ -1,5 +1,6 @@
 FROM node:18 as base
 
+
 SHELL ["/bin/bash", "-c"]
 
 # core libs 
@@ -10,18 +11,15 @@ RUN apt-get update && apt-get install -y \
     python-is-python3 \
     g++ \
     libc-dev \
-    openjdk-17-jdk  
-
-# For puppeteer and FSIM
-RUN apt-get install -y libxkbcommon-x11-0 libgbm-dev python3-virtualenv
-RUN virtualenv env && source env/bin/activate && pip install opencv-python scikit-image image-similarity-measures
-
-
+    openjdk-17-jdk  && \
+    # For puppeteer and FSIM
+    apt-get install -y libxkbcommon-x11-0 libgbm-dev python3-pip && \
+    pip3 install --no-cache-dir opencv-python scikit-image image-similarity-measures pyfftw  --break-system-packages &&\
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY package.json .
-COPY yarn.lock .
+COPY package.json yarn.lock ./
 
 RUN yarn install
 
@@ -42,11 +40,11 @@ ENV NODE_ENV=production
 
 WORKDIR /app
 
-COPY package.json .
-COPY yarn.lock .
+COPY package.json yarn.lock ./
 
-RUN yarn install --frozen-lockfile --production
+RUN yarn install --frozen-lockfile --production && \
+    yarn cache clean && \
+    rm -rf /tmp/* /usr/local/share/.cache/yarn/v6
 
 COPY --from=base /app/dist ./dist
-
 RUN npx prisma generate
