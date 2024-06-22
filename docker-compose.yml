@@ -6,10 +6,15 @@ services:
       context: .
       dockerfile: Dockerfile
       target: base
+    container_name: codingducks-backend
     volumes:
       - ./:/app
       - ./nodemon.json:/app/nodemon.json
-    container_name: codingducks-backend
+    deploy:
+      resources:
+        limits:
+          memory: 800M
+
     expose:
       - "3333"
       - "3334"
