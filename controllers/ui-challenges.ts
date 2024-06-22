@@ -9,7 +9,6 @@ import { mkdir, readFile, rm, writeFile } from "fs/promises";
 import path from "path";
 import { runFSIM } from "../FSIM";
 import axios from "axios";
-import { performance } from "node:perf_hooks";
 
 // -----------------ADMIN STUFF_----------------
 export const getAllChallenges = async (req: Request, res: Response) => {
@@ -524,10 +523,8 @@ export const getHighScores = async (req: Request, res: Response) => {
 };
 export const submitAttempt = async (req: Request, res: Response) => {
   try {
-    const start = performance.now();
     const { challengeId } = req.params;
     const { head, html, css, js } = req.body;
-    console.log((performance.now() - start) / 1000, "fetching challenge");
 
     const challenge = await prisma.challenge.findFirst({
       where: { id: +challengeId },
@@ -543,7 +540,6 @@ export const submitAttempt = async (req: Request, res: Response) => {
     if (!challenge) {
       return res.status(404).json({ message: "challenge not found" });
     }
-    console.log((performance.now() - start) / 1000, "generating htmls");
     const codeTemplate = generateHtmlString({
       html,
       css,
@@ -566,7 +562,6 @@ export const submitAttempt = async (req: Request, res: Response) => {
     );
     // console.log(ogImageTemplate);
 
-    console.log((performance.now() - start) / 1000, "taking ss");
     // take both images and compare
     const [codeImageBuffer, targetImageBuffer, ogImageBuffer] =
       await Promise.all([
@@ -584,7 +579,6 @@ export const submitAttempt = async (req: Request, res: Response) => {
         }) as Promise<Buffer>,
       ]);
 
-    console.log((performance.now() - start) / 1000, "creating dirs");
     // create attempt directory for user
     await imageKit.createFolder({
       parentFolderPath: "/coding_ducks/ui-challenges/",
@@ -595,7 +589,6 @@ export const submitAttempt = async (req: Request, res: Response) => {
       folderName: String(req.user.userId),
     });
 
-    console.log((performance.now() - start) / 1000, "creating path");
     // store images locally then call python script
     const uuid = randomUUID();
     const _path = path.join(__dirname, "..", "FSIM", "tmp", uuid);
@@ -603,14 +596,12 @@ export const submitAttempt = async (req: Request, res: Response) => {
     await mkdir(_path, {
       recursive: true,
     });
-    console.log((performance.now() - start) / 1000, "writing files");
     await Promise.all([
       writeFile(path.join(_path, "target.png"), targetImageBuffer),
       writeFile(path.join(_path, "code.png"), codeImageBuffer),
       writeFile(path.join(_path, "og.png"), ogImageBuffer),
     ]);
 
-    console.log((performance.now() - start) / 1000, "init FSIM");
     const { files, score } = await runFSIM(uuid);
     const imgkitDirname = `/coding_ducks/ui-challenges/${challenge.slug}/attempts/${req.user?.userId}`;
     const result = await Promise.all(
@@ -622,7 +613,6 @@ export const submitAttempt = async (req: Request, res: Response) => {
         })
       )
     );
-    console.log((performance.now() - start) / 1000, "updaing db");
     const newAttempt = await prisma.challengeAttempt.create({
       data: {
         challenge: { connect: { id: +challengeId } },
@@ -648,10 +638,8 @@ export const submitAttempt = async (req: Request, res: Response) => {
         challenge: { select: { id: true, slug: true, title: true } },
       },
     });
-    console.log((performance.now() - start) / 1000, "sending res");
     //TODO: also upload an HD image later
     res.status(200).json({ status: "success", data: newAttempt });
-    console.log((performance.now() - start) / 1000, "cleaning up");
     await rm(_path, { recursive: true });
   } catch (err) {
     console.log(err);
