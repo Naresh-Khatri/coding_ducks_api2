@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import http from "http";
-import { WebSocketServer } from "ws";
+import { Server as WebSocketServer } from 'ws';
 import * as Y from "yjs";
 import { MongodbPersistence } from "y-mongodb-provider";
 import { setPersistence, setupWSConnection } from "./websocket/utils";
