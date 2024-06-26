@@ -29,7 +29,7 @@ RUN npx prisma generate && \
     mkdir -p turbodrive/.tmp \
     mkdir -p dist/tmp/templates && \
     mkdir -p tmp/templates \
-    mkdir -p FSIM/tmp 
+    mkdir -p python/tmp 
 
 RUN yarn build
 
@@ -44,7 +44,7 @@ COPY package.json yarn.lock ./
 
 RUN yarn install --frozen-lockfile --production && \
     yarn cache clean && \
+    npx prisma generate && \
     rm -rf /tmp/* /usr/local/share/.cache/yarn/v6
 
 COPY --from=base /app/dist ./dist
-RUN npx prisma generate
