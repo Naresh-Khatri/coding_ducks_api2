@@ -94,7 +94,7 @@ export const generateOGHtmlString = (
     "border: none",
     "border-radius: 20px",
     `box-shadow: ${
-      scale !== 1 ? "rgba(0, 0, 0, 0.6) 0px 25px 50px -12px" : ""
+      scale === 1 ? "rgba(0, 0, 0, 0.6) 0px 25px 50px -12px" : ""
     }`,
     `scale: ${scale}`,
   ];
