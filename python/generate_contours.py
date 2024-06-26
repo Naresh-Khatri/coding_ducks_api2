@@ -3,29 +3,23 @@ import os
 import cv2
 import numpy as np
 from skimage.metrics import structural_similarity
-# from image_similarity_measures.evaluate import evaluation
-from image_similarity_measures.quality_metrics import fsim
-from time import perf_counter
-
-start = perf_counter()
 
 [foo, dirname] = sys.argv
+print(foo, dirname)
 
-base_path = os.path.join("FSIM", "tmp", dirname)
+base_path = os.path.join("python", "tmp", dirname)
+print(base_path)
 
-before = cv2.imread(os.path.join(base_path, "target.png"))
-after = cv2.imread(os.path.join(base_path, "code.png"))
+target = cv2.imread(os.path.join(base_path, "target.png"))
+output = cv2.imread(os.path.join(base_path, "output.png"))
+# print(target)
 
 # Convert images to grayscale
-before_gray = cv2.cvtColor(before, cv2.COLOR_BGR2GRAY)
-after_gray = cv2.cvtColor(after, cv2.COLOR_BGR2GRAY)
-
-# Compute FSIM score between two images
-score = fsim(org_img=before, pred_img=after)
-print("FSIM:", score)
+target_gray = cv2.cvtColor(target, cv2.COLOR_BGR2GRAY)
+output_gray = cv2.cvtColor(output, cv2.COLOR_BGR2GRAY)
 
 # Compute SSIM between two images
-(_, diff) = structural_similarity(before_gray, after_gray, full=True)
+(_, diff) = structural_similarity(target_gray, output_gray, full=True)
 
 # The diff image contains the actual image differences between the two images
 # and is represented as a floating point data type in the range [0,1]
@@ -39,20 +33,20 @@ thresh = cv2.threshold(diff, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
 contours = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 contours = contours[0] if len(contours) == 2 else contours[1]
 
-mask = np.zeros(before.shape, dtype="uint8")
-filled_after = after.copy()
+mask = np.zeros(target.shape, dtype="uint8")
+filled_output = output.copy()
 
 for c in contours:
     area = cv2.contourArea(c)
     if area > 40:
         x, y, w, h = cv2.boundingRect(c)
-        cv2.rectangle(before, (x, y), (x + w, y + h), (36, 12, 255), 1)
-        cv2.rectangle(after, (x, y), (x + w, y + h), (36, 12, 255), 1)
+        cv2.rectangle(target, (x, y), (x + w, y + h), (36, 255, 12), 2)
+        cv2.rectangle(output, (x, y), (x + w, y + h), (36, 255, 12), 2)
         cv2.drawContours(mask, [c], 0, (0, 255, 0), -1)
-        cv2.drawContours(filled_after, [c], 0, (0, 255, 0), -1)
+        cv2.drawContours(filled_output, [c], 0, (0, 255, 0), -1)
 
-cv2.imwrite(os.path.join(base_path, "before.png"), before)
-cv2.imwrite(os.path.join(base_path, "after.png"), after)
+cv2.imwrite(os.path.join(base_path, "target_contours.png"), target)
+cv2.imwrite(os.path.join(base_path, "output_contours.png"), output)
 cv2.imwrite(os.path.join(base_path, "diff.png"), diff)
 cv2.imwrite(os.path.join(base_path, "mask.png"), mask)
-cv2.imwrite(os.path.join(base_path, "filled_after.png"), filled_after)
+cv2.imwrite(os.path.join(base_path, "filled_output.png"), filled_output)
