@@ -7,7 +7,7 @@ import { generateHtmlString, generateOGHtmlString } from "../lib/utils";
 import { randomUUID } from "crypto";
 import { mkdir, readFile, rm, writeFile } from "fs/promises";
 import path from "path";
-import { runFSIM } from "../FSIM";
+import { getContours, getScore } from "../python";
 import axios from "axios";
 
 // -----------------ADMIN STUFF_----------------
@@ -362,7 +362,7 @@ export const recalculateChallengeAttempts = async (
     for (let i = 0; i < attempts.length; i++) {
       if (!attempts[i] || !attempts[i]?.imgCode) continue;
       const uuid = randomUUID();
-      const _path = path.join(__dirname, "..", "FSIM", "tmp", uuid);
+      const _path = path.join(__dirname, "..", "python", "tmp", uuid);
       await mkdir(_path, {
         recursive: true,
       });
@@ -372,10 +372,10 @@ export const recalculateChallengeAttempts = async (
       });
       await Promise.all([
         writeFile(path.join(_path, "target.png"), targetImage.data),
-        writeFile(path.join(_path, "code.png"), codeImage.data),
+        writeFile(path.join(_path, "output.png"), codeImage.data),
       ]);
 
-      const { score } = await runFSIM(uuid);
+      const { score } = await getScore(uuid);
       console.log("score", attempts[i]?.id, attempts[i]?.imgCode, score);
       result.push(
         await prisma.challengeAttempt.update({
@@ -523,9 +523,15 @@ export const getHighScores = async (req: Request, res: Response) => {
 };
 export const submitAttempt = async (req: Request, res: Response) => {
   try {
-    const { challengeId } = req.params;
-    const { head, html, css, js } = req.body;
+    // set headers for streaming
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Transfer-Encoding", "chunked");
 
+    const { challengeId } = req.params;
+    const { head, html, css, js } = req.body.contents;
+    res.write(
+      JSON.stringify({ stage: "1", status: "Searching for challenge" }) + "↩"
+    );
     const challenge = await prisma.challenge.findFirst({
       where: { id: +challengeId },
       select: {
@@ -540,7 +546,8 @@ export const submitAttempt = async (req: Request, res: Response) => {
     if (!challenge) {
       return res.status(404).json({ message: "challenge not found" });
     }
-    const codeTemplate = generateHtmlString({
+    res.write(JSON.stringify({ status: "Generating Templates" }) + "↩");
+    const outputTemplate = generateHtmlString({
       html,
       css,
       js,
@@ -560,13 +567,14 @@ export const submitAttempt = async (req: Request, res: Response) => {
       },
       challenge.ogImageScale === 0 ? 1 : +challenge.ogImageScale
     );
-    // console.log(ogImageTemplate);
+    console.log(ogImageTemplate);
 
+    res.write(JSON.stringify({ status: "Generating screenshots" }) + "↩");
     // take both images and compare
     const [codeImageBuffer, targetImageBuffer, ogImageBuffer] =
       await Promise.all([
         nodeHtmlToImage({
-          html: codeTemplate,
+          html: outputTemplate,
           puppeteerArgs: { args: ["--no-sandbox"] },
         }) as Promise<Buffer>,
         nodeHtmlToImage({
@@ -589,30 +597,36 @@ export const submitAttempt = async (req: Request, res: Response) => {
       folderName: String(req.user.userId),
     });
 
+    res.write(JSON.stringify({ status: "Storing images" }) + "↩");
     // store images locally then call python script
     const uuid = randomUUID();
-    const _path = path.join(__dirname, "..", "FSIM", "tmp", uuid);
+    const _path = path.join(__dirname, "..", "python", "tmp", uuid);
     console.log(uuid, _path);
     await mkdir(_path, {
       recursive: true,
     });
     await Promise.all([
       writeFile(path.join(_path, "target.png"), targetImageBuffer),
-      writeFile(path.join(_path, "code.png"), codeImageBuffer),
+      writeFile(path.join(_path, "output.png"), codeImageBuffer),
       writeFile(path.join(_path, "og.png"), ogImageBuffer),
     ]);
 
-    const { files, score } = await runFSIM(uuid);
+    console.log(_path);
+    res.write(JSON.stringify({ status: "generating contours" }) + "↩");
+    const { files } = await getContours(uuid);
+    res.write(JSON.stringify({ status: "uploading to imgkit" }) + "↩");
     const imgkitDirname = `/coding_ducks/ui-challenges/${challenge.slug}/attempts/${req.user?.userId}`;
     const result = await Promise.all(
-      files.map(async (fileName) =>
-        imageKit.upload({
+      files.map(async (fileName) => {
+        console.log(fileName);
+        return imageKit.upload({
           file: await readFile(path.join(_path, fileName)),
           fileName: fileName,
           folder: imgkitDirname,
-        })
-      )
+        });
+      })
     );
+    res.write(JSON.stringify({ status: "storing in db" }) + "↩");
     const newAttempt = await prisma.challengeAttempt.create({
       data: {
         challenge: { connect: { id: +challengeId } },
@@ -626,24 +640,46 @@ export const submitAttempt = async (req: Request, res: Response) => {
 
         imgCode: result[0].url,
         imgTarget: result[1].url,
-        imgBefore: result[2].url,
-        imgAfter: result[3].url,
+        imgAfter: result[2].url,
+        imgBefore: result[3].url,
         imgDiff: result[4].url,
         imgFilledAfter: result[5].url,
         imgMask: result[6].url,
         ogImage: result[7].url,
-        score: parseInt((+score * 1000).toString()),
+        score: 0,
       },
       include: {
         challenge: { select: { id: true, slug: true, title: true } },
       },
     });
+    res.write(
+      JSON.stringify({
+        stage: "2",
+        status: "generate score",
+        data: newAttempt,
+      }) + "↩"
+    );
+    const { score } = await getScore(uuid);
+    await prisma.challengeAttempt.update({
+      where: { id: +newAttempt.id },
+      data: {
+        score: parseInt((+score * 1000).toString()),
+      },
+    });
     //TODO: also upload an HD image later
-    res.status(200).json({ status: "success", data: newAttempt });
+    res.write(
+      JSON.stringify({
+        status: "done",
+        score: Math.round(+score * 100),
+      }) + "↩"
+    );
+    res.end();
     await rm(_path, { recursive: true });
   } catch (err) {
+    console.log("lol");
     console.log(err);
-    res.status(404).json({ message: "somethings wrong" });
+    res.write(JSON.stringify({ error: "something went wrong" }) + "↩");
+    res.end();
   }
 };
 
