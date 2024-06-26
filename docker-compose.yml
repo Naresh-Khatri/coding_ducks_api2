@@ -13,7 +13,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 800M
+          memory: 2.5g
 
     expose:
       - "3333"
