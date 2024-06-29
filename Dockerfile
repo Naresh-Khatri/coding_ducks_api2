@@ -1,9 +1,9 @@
 FROM node:18 as base
 
-
 SHELL ["/bin/bash", "-c"]
 
 # core libs 
+# RUN echo "-------------installing core libs----------------"
 RUN apt-get update && apt-get install -y \
     unzip \
     curl \
@@ -21,9 +21,13 @@ WORKDIR /app
 
 COPY package.json yarn.lock ./
 
+# RUN echo "-------------installing dependencies----------------"
 RUN yarn install
 
+# RUN echo "-------------copying files----------------"
 COPY . .
+
+# RUN echo "-------------prisma gen----------------"
 RUN npx prisma generate && \
     mkdir -p dist/turbodrive/.tmp && \
     mkdir -p turbodrive/.tmp \
@@ -31,16 +35,19 @@ RUN npx prisma generate && \
     mkdir -p tmp/templates \
     mkdir -p python/tmp 
 
+# RUN echo "builing project"
 RUN yarn build
 
 
 FROM node:18 as production
 
+SHELL ["/bin/bash", "-c"]
+
 ENV NODE_ENV=production
 
 WORKDIR /app
 
-COPY package.json yarn.lock ./
+COPY package.json yarn.lock prisma/ ./
 
 RUN yarn install --frozen-lockfile --production && \
     yarn cache clean && \
@@ -48,3 +55,4 @@ RUN yarn install --frozen-lockfile --production && \
     rm -rf /tmp/* /usr/local/share/.cache/yarn/v6
 
 COPY --from=base /app/dist ./dist
+COPY --from=base /app/python ./dist/python

@@ -1,7 +1,24 @@
-version: '3.7'
+version: "3.7"
 
 services:
-  prod:
+  app:
     build:
+      context: .
+      dockerfile: Dockerfile
       target: production
-    command: yarn start
+    container_name: codingducks-backend-prod
+    restart: always
+    env_file:
+      - .env
+    deploy:
+      resources:
+        limits:
+          memory: 2.5g
+
+    expose:
+      - "3333"
+      - "3334"
+    ports:
+      - "3333:3333"
+      - "3334:3334"
+    command: ["yarn", "start"]
