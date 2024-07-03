@@ -4,14 +4,11 @@ import cv2
 import numpy as np
 from skimage.metrics import structural_similarity
 
-[foo, dirname] = sys.argv
-print(foo, dirname)
+[foo, path] = sys.argv
+print(foo, path)
 
-base_path = os.path.join("python", "tmp", dirname)
-print(base_path)
-
-target = cv2.imread(os.path.join(base_path, "target.png"))
-output = cv2.imread(os.path.join(base_path, "output.png"))
+target = cv2.imread(os.path.join(path, "target.png"))
+output = cv2.imread(os.path.join(path, "output.png"))
 # print(target)
 
 # Convert images to grayscale
@@ -45,8 +42,8 @@ for c in contours:
         cv2.drawContours(mask, [c], 0, (0, 255, 0), -1)
         cv2.drawContours(filled_output, [c], 0, (0, 255, 0), -1)
 
-cv2.imwrite(os.path.join(base_path, "target_contours.png"), target)
-cv2.imwrite(os.path.join(base_path, "output_contours.png"), output)
-cv2.imwrite(os.path.join(base_path, "diff.png"), diff)
-cv2.imwrite(os.path.join(base_path, "mask.png"), mask)
-cv2.imwrite(os.path.join(base_path, "filled_output.png"), filled_output)
+cv2.imwrite(os.path.join(path, "target_contours.png"), target)
+cv2.imwrite(os.path.join(path, "output_contours.png"), output)
+cv2.imwrite(os.path.join(path, "diff.png"), diff)
+cv2.imwrite(os.path.join(path, "mask.png"), mask)
+cv2.imwrite(os.path.join(path, "filled_output.png"), filled_output)

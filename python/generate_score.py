@@ -6,14 +6,11 @@ import phasepack.phasecong as pc
 from image_similarity_measures.quality_metrics import fsim as fsimm
 from time import perf_counter
 
-[foo, dirname] = sys.argv
-print(foo, dirname)
-
-base_path = os.path.join("python", "tmp", dirname)
-print(base_path)
-
-target = cv2.imread(os.path.join(base_path, "target.png"))
-output = cv2.imread(os.path.join(base_path, "output.png"))
+[foo, path] = sys.argv
+print(foo, path)
+print("generating scores")
+target = cv2.imread(os.path.join(path, "target.png"))
+output = cv2.imread(os.path.join(path, "output.png"))
 
 
 def _gradient_magnitude(img: np.ndarray, img_depth: int):
@@ -37,6 +34,7 @@ def _similarity_measure(x: np.array, y: np.array, constant: float):
 
 
 start = perf_counter()
+
 
 def fsim(img1: np.ndarray, img2: np.ndarray, T1: float = 0.85, T2: float = 160):
     """
@@ -94,7 +92,7 @@ print(perf_counter() - start, "generated")
 #      12   20   21     29     28   24
 # custom
 # new: 19   19   19
-#      10   9     9 
+#      10   9     9
 
 # lib 1.8gb
 # old: 32   33   31     43     31   36
@@ -102,6 +100,6 @@ print(perf_counter() - start, "generated")
 # lib 2.5gb
 # old: 23   19   18     19     19   19
 #      12   9     9     9      9    9
-# lib no limit 
+# lib no limit
 # old: 22   18   19     19     19   19
 #      10   9     9     9      9    9

@@ -1,11 +1,15 @@
 import { UUID } from "crypto";
 import { PythonShell } from "python-shell";
+import path from "path";
 
 export const getContours = async (uuid: UUID): Promise<{ files: string[] }> => {
   return new Promise((resolve, reject) => {
-    const pyShell = new PythonShell("python/generate_contours.py", {
-      args: [uuid],
-    });
+    const pyShell = new PythonShell(
+      path.join(__dirname, "generate_contours.py"),
+      {
+        args: [path.join(__dirname, "tmp", uuid)],
+      }
+    );
 
     pyShell.on("error", function (message) {
       console.log("error", message);
@@ -42,9 +46,12 @@ export const getContours = async (uuid: UUID): Promise<{ files: string[] }> => {
 export const getScore = async (uuid: UUID): Promise<{ score: string }> => {
   return new Promise((resolve, reject) => {
     let score = "";
-    const pyShell = new PythonShell("python/generate_score.py", {
-      args: [uuid],
-    });
+    const pyShell = new PythonShell(
+      path.join(__dirname, "generate_score.py"),
+      {
+        args: [path.join(__dirname, "tmp", uuid)],
+      }
+    );
 
     pyShell.on("error", function (message) {
       console.log("error", message);
