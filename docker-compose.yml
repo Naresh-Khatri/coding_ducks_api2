@@ -6,6 +6,10 @@ services:
       context: .
       dockerfile: Dockerfile
       target: base
+      args:
+        - NODE_ENV=development
+    environment:
+      - NODE_ENV=development
     container_name: codingducks-backend
     volumes:
       - ./:/app

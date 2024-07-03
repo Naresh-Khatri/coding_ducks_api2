@@ -2,6 +2,9 @@ FROM node:18 as base
 
 SHELL ["/bin/bash", "-c"]
 
+ARG NODE_ENV=production
+ENV NODE_ENV $NODE_ENV
+
 # core libs 
 RUN apt-get update && apt-get install -y \
     unzip \
@@ -51,7 +54,8 @@ RUN apt-get update && apt-get install -y \
     pip3 install --no-cache-dir opencv-python scikit-image image-similarity-measures pyfftw  --break-system-packages &&\
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-ENV NODE_ENV=production
+ARG NODE_ENV=production
+ENV NODE_ENV $NODE_ENV
 
 WORKDIR /app
 
