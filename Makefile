@@ -1,5 +1,5 @@
 build:
-	docker compose build
+	docker compose -f docker-compose.yml build
 
 up:
 	docker compose up -d --remove-orphans
